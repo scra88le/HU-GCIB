@@ -771,4 +771,16 @@ biogeography.},
   timestamp = {2017.02.06},
 }
 
+@Book{crawley2007,
+  title     = {The R Book},
+  publisher = {John Wiley \& Sons},
+  year      = {2007},
+  author    = {Crawley, Michael J.},
+  address   = {UK},
+  file      = {:readme/book_chapters/Crawley_The.R.Book.pdf:PDF},
+  groups    = {books},
+  owner     = {DZ},
+  timestamp = {2008.02.20},
+}
+
 @Comment{jabref-meta: databaseType:bibtex;}
