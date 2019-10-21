@@ -423,79 +423,329 @@ div.tocify {
 </div>
 
 
+<hr />
 <div id="biodiversity-data" class="section level1">
 <h1><span class="header-section-number">1</span> Biodiversity data</h1>
-<!-- Many different types of biodiversity data exist, e.g. from standardised monitoring schemes, citizen science platforms, or expert knowledge. Each comes with own challenges. Here, we simply want to learn how we can obtain and process representative types of biodiversity data. Today, we will mainly deal with publicly available data, in particular occurrence records from GBIF and expert range maps from the IUCN. -->
-<!-- ## GBIF point records -->
-<!-- GBIF stands for *Global Biodiversity Information Facility*. GBIF defines itself as "an international network and research infrastructure funded by the world’s governments and aimed at providing anyone, anywhere, open access to data about all types of life on Earth". GBIF contains worldwide point records from observations as well as museum records or other contributions. The data are thus not standardised and often it is unclear which spatial resolution the data represent. To understand this, let's look at some example under https://www.gbif.org/. -->
-<!-- ### Downloading gbif records -->
-<!-- We will use the function `gbif()` from the *dismo* package to download gbif records. As example, I chose the black grouse (*Tetrao tetrix*), a large game bird. -->
-<!-- ```{r eval=F} -->
-<!-- library(dismo) -->
-<!-- ttetrix <- gbif("tetrao", "tetrix*", geo=FALSE) -->
-<!-- # Let's inspect the data - do you trust all data points? -->
-<!-- str(ttetrix) -->
-<!-- table(ttetrix$basisOfRecord) -->
-<!-- summary(ttetrix$lon) -->
-<!-- summary(ttetrix$lat) -->
-<!-- ``` -->
-<!-- Let's map the occurrences. Of course, the maps will only help us judging the data quality if we have a rough idea where the species should occur. So, look the species up on the web first! -->
-<!-- ```{r eval=F} -->
-<!-- # Maptools offers simple maps of the world: -->
-<!-- library(maptools) -->
-<!-- # We first load the world data from the name space: -->
-<!-- data(wrld_simpl) -->
-<!-- # Now we map the world. We can restrict the map extent to the longitude and latitude  -->
-<!-- # range of black grouse that we extracted from the data before. -->
-<!-- plot(wrld_simpl, ylim=c(32,81), xlim=c(-32,130)) -->
-<!-- # Let's add the point records. Do these occurrences look plausible? -->
-<!-- points(ttetrix$lon, ttetrix$lat, col='red', cex=0.3, pch=19) -->
-<!-- ``` -->
-<!-- ### Cleaning gbif data -->
-<!-- In my opinion, the data hugely overestimate black grouse occurrence, which has a large range in Scandinavia and Siberia and some remnant populations in Scotland, Germany and the Alps. Finding out what is wrong can be tedious. But let's try. I would first try to find out where the data come from. -->
-<!-- ```{r eval=F} -->
-<!-- # Which datasets are included? -->
-<!-- table(ttetrix$datasetName) -->
-<!-- ``` -->
-<!-- The EBCC Atlas of European Breeding Birds was published in 1997, is based on 25 years of fieldwork (but largely during the late 1980s) and should give a high-quality picture of European breeding bird distribution. These data were mapped in the ca. 50×50 km squares of a Universal Transverse Mercator (UTM) grid. So let's have a look at black grouse occurrence records from the EBCC. -->
-<!-- ```{r eval=F} -->
-<!-- plot(wrld_simpl, ylim=c(32,81), xlim=c(-32,130)) -->
-<!-- with(subset(ttetrix, datasetName =="EBCC Atlas of European Breeding Birds"),  -->
-<!--    points(lon, lat, col='red', cex=0.3, pch=19)) -->
-<!-- ``` -->
-<!-- Obviously, there is something wrong with the EBCC data and we have to find out what. So let's inspect the data in more detail. -->
-<!-- ```{r eval=F} -->
-<!-- ebcc.ttetrix <- subset(ttetrix, datasetName =="EBCC Atlas of European Breeding Birds") -->
-<!-- head(ebcc.ttetrix) -->
-<!-- ``` -->
-<!-- I am particularly curious about the column *occurrenceStatus* as this seems to involve absences. What does that mean? -->
-<!-- ```{r eval=F} -->
-<!-- table(ebcc.ttetrix$occurrenceStatus) -->
-<!-- # Let's try to plot different subsets: -->
-<!-- plot(wrld_simpl, ylim=c(32,81), xlim=c(-32,130)) -->
-<!-- with(subset(ebcc.ttetrix, occurrenceStatus !="absent"),  -->
-<!--    points(lon, lat, col='red', cex=0.3, pch=19)) -->
-<!-- with(subset(ebcc.ttetrix, occurrenceStatus =="confirmed breeding" |  -->
-<!--    occurrenceStatus =="probable breeding"),  -->
-<!--    points(lon, lat, col='darkorange', cex=0.3, pch=19))     -->
-<!-- with(subset(ebcc.ttetrix, occurrenceStatus =="confirmed breeding"),  -->
-<!--    points(lon, lat, col='darkgreen', cex=0.3, pch=19)) -->
-<!-- ``` -->
-<!-- That looks more sensible, doesn't it? Which records should we assign as presences?  -->
-<!-- ```{r eval=F} -->
-<!-- # This would be the most liberal choice: -->
-<!-- ebcc.ttetrix$occ <- ifelse(ebcc.ttetrix$occurrenceStatus =="absent", 0, 1) -->
-<!-- plot(wrld_simpl, ylim=c(32,81), xlim=c(-32,130)) -->
-<!-- points(ebcc.ttetrix$lon, ebcc.ttetrix$lat,  -->
-<!--    col=c('black','red')[as.factor(ebcc.ttetrix$occ)], cex=0.3, pch=19) -->
-<!-- ``` -->
-<!-- The EBCC issue we just encountered is rather unusual and I doubt we find similar cases for other taxonmic groups. Most often, GBIF will only contain presences. In these cases, typical problems involve data without coordinates or wrongly-georeferenced data. Let's have a look at the black grouse data when excluding the EBCC data. Do you spot any points that MUST be wrong? -->
-<!-- ```{r eval=F} -->
-<!-- plot(wrld_simpl, ylim=c(32,81), xlim=c(-32,130)) -->
-<!-- with(subset(ttetrix, datasetName !="EBCC Atlas of European Breeding Birds"),  -->
-<!--    points(lon, lat, col='red', cex=0.3, pch=19)) -->
-<!-- ``` -->
-<!-- The `gbif()` function in the *dismo* package already provides a lot of functionalities to control data, and I suggest you check out the help pages in more detail (`?gbif`). Also Robert Hijmans, who wrote the *raster* and the *dismo* package offers great tutorials on his website: http://rspatial.org. -->
+<p>Many different types of biodiversity data exist, e.g. from standardised monitoring schemes, citizen science platforms, or expert knowledge. Each comes with own challenges. Here, we simply want to learn how we can obtain and process representative types of biodiversity data. Today, we will mainly deal with publicly available data, in particular occurrence records from GBIF and expert range maps from the IUCN.</p>
+<div id="gbif-point-records" class="section level2">
+<h2><span class="header-section-number">1.1</span> GBIF point records</h2>
+<p>GBIF stands for <em>Global Biodiversity Information Facility</em>. GBIF defines itself as “an international network and research infrastructure funded by the world’s governments and aimed at providing anyone, anywhere, open access to data about all types of life on Earth”. GBIF contains worldwide point records from observations as well as museum records or other contributions. The data are thus not standardised and often it is unclear which spatial resolution the data represent. To understand this, let’s look at some example under <a href="https://www.gbif.org/" class="uri">https://www.gbif.org/</a>.</p>
+<div id="downloading-gbif-records" class="section level3">
+<h3><span class="header-section-number">1.1.1</span> Downloading gbif records</h3>
+<p>We will use the package <code>rgbif</code> to search and retrieve data from GBIF. A good tutorial to this package is offered <a href="https://ropensci.org/tutorials/rgbif_tutorial/">here</a>. Remember that we can install new packages with the function <code>install.packages()</code>. Alternatively, the <code>dismo</code> package offer the function <code>gbif()</code> to download gbif records. Robert Hijmans, who wrote the raster and the dismo package, also offers great tutorials on his website: <a href="http://rspatial.org" class="uri">http://rspatial.org</a>.</p>
+<pre class="r"><code>library(rgbif)
+
+# Check out the number of occurrences found in GBIF:
+occ_count()</code></pre>
+<pre><code>## Registered S3 method overwritten by &#39;crul&#39;:
+##   method                 from
+##   as.character.form_file httr</code></pre>
+<pre><code>## [1] 1349468046</code></pre>
+<pre class="r"><code># number of observations:
+occ_count(basisOfRecord=&#39;OBSERVATION&#39;)</code></pre>
+<pre><code>## [1] 19662024</code></pre>
+<pre class="r"><code># number of occurrences reported for Germany:
+occ_count(country=isocodes[grep(&quot;Germany&quot;, isocodes$name), &quot;code&quot;])</code></pre>
+<pre><code>## [1] 37830799</code></pre>
+<pre class="r"><code># number of observations reported for Germany:
+occ_count(country=isocodes[grep(&quot;Germany&quot;, isocodes$name), &quot;code&quot;],basisOfRecord=&#39;OBSERVATION&#39;)</code></pre>
+<pre><code>## [1] 299490</code></pre>
+<p>As example, I picked the Alpine shrew (<em>Sorex alpinus</em>) for today, a small mammal species occurring in Central and Suuth-Eastern European mountain ranges. Its conservation status is near threatened (<a href="https://www.iucnredlist.org/species/29660/9514588">Link to IUCN redlist</a>).</p>
+<div class="figure">
+<img src="figures/shrew.png" alt="**Figure 1. The Alpine shrew (*Sorex alpinus*). Picture by Dr. Richard Kraft, downloaded from https://kleinsaeuger.at/sorex-alpinus.html.**" width="50%" />
+<p class="caption">
+<strong>Figure 1. The Alpine shrew (<em>Sorex alpinus</em>). Picture by Dr. Richard Kraft, downloaded from <a href="https://kleinsaeuger.at/sorex-alpinus.html" class="uri">https://kleinsaeuger.at/sorex-alpinus.html</a>.</strong>
+</p>
+</div>
+<p>We first check whether any synonyms exist and how many records exist for the species. Download will be slow for high numbers of records.</p>
+<pre class="r"><code># Check for synonyms
+name_suggest(q=&#39;Sorex alpinus&#39;, rank=&#39;species&#39;)
+
+# Check number of records
+occ_search(scientificName = &quot;Sorex alpinus&quot;, limit = 10)</code></pre>
+<p>Now, let’s download the records and plot them. Of course, the map will only help us judging the data quality if we have a rough idea where the species should occur. So, look up the species on the web first!</p>
+<pre class="r"><code>gbif_shrew &lt;- occ_search(scientificName = &quot;Sorex alpinus&quot;,return=&#39;data&#39;, limit=500)
+
+library(maptools)</code></pre>
+<pre><code>## Loading required package: sp</code></pre>
+<pre><code>## Checking rgeos availability: TRUE</code></pre>
+<pre class="r"><code>data(wrld_simpl)
+plot(wrld_simpl,xlim=c(5,130), ylim=c(40,55))
+points(gbif_shrew$decimalLongitude, gbif_shrew$decimalLatitude, col=&#39;red&#39;,  pch=19)</code></pre>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+</div>
+<div id="cleaning-and-cross-checking-gbif-data" class="section level3">
+<h3><span class="header-section-number">1.1.2</span> Cleaning and cross-checking gbif data</h3>
+<p>You should always critically assess the quality of your data. This also holds true for GBIF data. Look at the map again, do all records look plausible?</p>
+<p>Not all coordinates seem to be correct, and we thus need to cross-check these. Robert Hijmans provides some code in his <code>dismo</code> <a href="http://rspatial.org">tutorials</a>. We will here use the new package <code>CoordinateCleaner</code> (<span class="citation">Zizka et al. (2019)</span>; see tutorials <a href="https://ropensci.github.io/CoordinateCleaner/">here</a>). The function <code>clean_coordinates()</code> allows cleaning geographic coordinates using different cross-checks. Here, we first compare whether the coordinates for each entry match the country code provided for each entry and are no outliers.</p>
+<pre class="r"><code>library(CoordinateCleaner)
+
+gbif_shrew &lt;- subset(gbif_shrew, !is.na(decimalLatitude))
+cl_gbif_shrew &lt;- clean_coordinates(gbif_shrew, lon=&quot;decimalLongitude&quot;, lat=&quot;decimalLatitude&quot;, countries=&quot;countryCode&quot;, tests=c(&quot;centroids&quot;,&quot;outliers&quot;))</code></pre>
+<pre><code>## Testing coordinate validity</code></pre>
+<pre><code>## Flagged 0 records.</code></pre>
+<pre><code>## Testing country centroids</code></pre>
+<pre><code>## Flagged 2 records.</code></pre>
+<pre><code>## Testing geographic outliers</code></pre>
+<pre><code>## Flagged 1 records.</code></pre>
+<pre><code>## Flagged 3 of 230 records, EQ = 0.01.</code></pre>
+<pre class="r"><code>plot(wrld_simpl,xlim=c(5,130), ylim=c(40,55))
+points(gbif_shrew$decimalLongitude, gbif_shrew$decimalLatitude, col=&#39;red&#39;,  pch=19)
+points(gbif_shrew$decimalLongitude[cl_gbif_shrew$.summary], gbif_shrew$decimalLatitude[cl_gbif_shrew$.summary], col=&#39;blue&#39;,  pch=18)</code></pre>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<pre class="r"><code>gbif_shrew &lt;- gbif_shrew[cl_gbif_shrew$.summary,]</code></pre>
+<p>Have a look at <span class="citation">Zizka et al. (2019)</span> and the examples by Robert Hijmans (<a href="https://rspatial.org/raster/sdm/2_sdm_occdata.html">http://rspatial.org</a>) for finding out about other typical problems with GBIF and how to deal with these.</p>
+</div>
+</div>
+<div id="iucn-range-maps" class="section level2">
+<h2><span class="header-section-number">1.2</span> IUCN range maps</h2>
+<p>We rarely have detailed biodiversity data available over large geographic extents. At broad (continental to global) extents, expert-drawn range maps (also called extent-of-occurrence maps) are often the primary data source on species distributions. Such range maps can be obtained from the IUCN. Let’s have a look for which taxa range maps are available: <a href="https://www.iucnredlist.org/resources/spatial-data-download" class="uri">https://www.iucnredlist.org/resources/spatial-data-download</a>. (For birds, the range maps are actually being made available through the data portal of Birdlife International.) You can download them for free, but you should provide some information on your work to obtain the data.</p>
+<p>Let’s stick with the Alpine shrew example. I have already downloaded the range map as shapefile; you can find this in the moodle course. (For all external readers, please just download the shapefile from the IUCN website.) We will use the package <em>raster</em> for reading in the shapefiles.</p>
+<pre class="r"><code>library(raster)
+
+# How is our shapefile called?  
+dir()</code></pre>
+<pre><code>##  [1] &quot;_footer.html&quot;           &quot;_site&quot;                 
+##  [3] &quot;_site.yml&quot;              &quot;0_Intro.Rmd&quot;           
+##  [5] &quot;1_Data_files&quot;           &quot;1_Data.Rmd&quot;            
+##  [7] &quot;2_patterns.Rmd&quot;         &quot;3_SDM_intro.Rmd&quot;       
+##  [9] &quot;4_SDM_eval.Rmd&quot;         &quot;5_SDM_algorithms.Rmd&quot;  
+## [11] &quot;6_SDM_ensembles.Rmd&quot;    &quot;7_SDM_conservation.Rmd&quot;
+## [13] &quot;8_dispersal.Rmd&quot;        &quot;9_populations.Rmd&quot;     
+## [15] &quot;figures&quot;                &quot;files&quot;                 
+## [17] &quot;GCIB-website.Rproj&quot;     &quot;gcib.bib&quot;              
+## [19] &quot;gcib.bib.bak&quot;           &quot;gcib.bib.sav&quot;          
+## [21] &quot;index.Rmd&quot;              &quot;schedule.Rmd&quot;</code></pre>
+<pre class="r"><code># Read in the shapefile:
+iucn_shrew = shapefile(&#39;files/IUCN_Sorex_alpinus.shp&#39;)
+
+# The shapefile is recognized as SpatialPolygonsDataFrame:
+iucn_shrew</code></pre>
+<pre><code>## class       : SpatialPolygonsDataFrame 
+## features    : 1 
+## extent      : 5.733728, 26.67935, 42.20601, 51.89984  (xmin, xmax, ymin, ymax)
+## crs         : +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 
+## variables   : 27
+## names       : id_no,      binomial, presence, origin, seasonal, compiler, yrcompiled,                                              citation, source, dist_comm, island, subspecies, subpop,            legend, tax_comm, ... 
+## value       : 29660, Sorex alpinus,        1,      1,        1,     IUCN,       2008, IUCN (International Union for Conservation of Nature),     NA,        NA,     NA,         NA,     NA, Extant (resident),       NA, ...</code></pre>
+<pre class="r"><code># Map it:
+plot(wrld_simpl,xlim=c(5,30), ylim=c(40,55))
+plot(iucn_shrew, col=&#39;blue&#39;, add=T)
+
+# Overlay the GBIF records:
+points(gbif_shrew$decimalLongitude, gbif_shrew$decimalLatitude, col=&#39;red&#39;,  pch=19)</code></pre>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<div id="rasterizing-range-maps" class="section level3">
+<h3><span class="header-section-number">1.2.1</span> Rasterizing range maps</h3>
+<p>For most applications in biodiversity modelling, we need to rasterize the polygons. The problem is that it is unclear at which spatial resolution the range maps accurately represent species occurrences. <span class="citation">Hurlbert and Jetz (2007)</span> and <span class="citation">Jetz, McPherson, and Guralnick (2012)</span> define the minimum spatial resolution as 100-200km (1-2°), although also resolutions of 50km (0.5°) and finer have been used <span class="citation">(Krosby et al. 2015)</span>.</p>
+<p>Rasterizing polgyon data is made very easy in the <em>raster</em> package. We first have to define a raster grid of the desired resolution, and then transfer the polgyon data to the raster cells. Note that we use a rather fine resolution of 10 arcminutes here because we want to intersect it with climate data later and compare climate estimates from GBIF and IUCN data.</p>
+<pre class="r"><code># By default, raster() will create a 1° resolution map in the *WGS 84* coordinate system (lon/lat).
+(r_10min &lt;- raster(res=1/6))</code></pre>
+<pre><code>## class      : RasterLayer 
+## dimensions : 1080, 2160, 2332800  (nrow, ncol, ncell)
+## resolution : 0.1666667, 0.1666667  (x, y)
+## extent     : -180, 180, -90, 90  (xmin, xmax, ymin, ymax)
+## crs        : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0</code></pre>
+<pre class="r"><code>(iucn_shrew_10min &lt;- rasterize(iucn_shrew, r_10min))</code></pre>
+<pre><code>## class      : RasterLayer 
+## dimensions : 1080, 2160, 2332800  (nrow, ncol, ncell)
+## resolution : 0.1666667, 0.1666667  (x, y)
+## extent     : -180, 180, -90, 90  (xmin, xmax, ymin, ymax)
+## crs        : +proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 
+## source     : memory
+## names      : layer 
+## values     : 1, 1  (min, max)
+## attributes :
+##  ID id_no      binomial presence origin seasonal compiler yrcompiled
+##   1 29660 Sorex alpinus        1      1        1     IUCN       2008
+##                                               citation source dist_comm
+##  IUCN (International Union for Conservation of Nature)   &lt;NA&gt;      &lt;NA&gt;
+##  island
+##    &lt;NA&gt;</code></pre>
+<pre class="r"><code>plot(wrld_simpl,xlim=c(5,30), ylim=c(40,55))
+plot(iucn_shrew, col=&#39;blue&#39;, add=T)
+plot(iucn_shrew_10min, add=T, alpha=0.6)</code></pre>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-6-1.png" width="672" /> What rule is being used to determine whether polygon data is transferred to a raster cell? Check out th help page <code>?rasterize</code> to find out.</p>
+</div>
+<div id="calculating-range-size" class="section level3">
+<h3><span class="header-section-number">1.2.2</span> Calculating range size</h3>
+<p>If we happen to have spatial polygons and raster data, it is straight forward to calculate range size. The simplest calculation would be to simply sum the number of cells occupied. Why could this be problematic when using the geographic projection?</p>
+<pre class="r"><code># The following two commands produce the same results. 
+# Which way is better? Why?
+sum(values(iucn_shrew_10min),na.rm=T)
+length(values(iucn_shrew_10min)[!is.na(values(iucn_shrew_10min))])</code></pre>
+<p>The <em>raster</em> package has the command <code>area()</code> to calculate the area of all (!) cells in a raster.</p>
+<pre class="r"><code>area(iucn_shrew_10min)
+plot(area(iucn_shrew_10min))
+
+# So, area() will produce a new raster map of cell areas.
+# For calculating range sizes, we have to subset the area map:
+sum(values(area(iucn_shrew_10min))[!is.na(values(iucn_shrew_10min))])
+
+# We could simplify it and make it less error-prone by writing a function:
+range.size &lt;- function(r) {
+    sum(values(area(r))[!is.na(values(r))])
+}
+
+range.size(iucn_shrew_10min)</code></pre>
+</div>
+<div id="calculating-range-centroids" class="section level3">
+<h3><span class="header-section-number">1.2.3</span> Calculating range centroids</h3>
+<p>We can also calculate other interesting range estimates. Here, we want to estimate range centroids, the central coordinates of the ranges. Such calculations could be useful if you wanted to compare how range centres (are projected to) shift under scenarios of global change. Again, we have to check our coordinate system whether we have to control for unequal areas. Do you know why?</p>
+<p>We will use the package <code>SDMTools</code> to calculate range centroids.</p>
+<pre class="r"><code>library(SDMTools)</code></pre>
+<pre><code>## Registered S3 method overwritten by &#39;R.oo&#39;:
+##   method        from       
+##   throw.default R.methodsS3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;SDMTools&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:raster&#39;:
+## 
+##     distance</code></pre>
+<pre class="r"><code># We can calculate the range centroid directly from the raster layer.
+# But this doesn&#39;t work with area weights...
+COGravity(iucn_shrew_10min)</code></pre>
+<pre><code>##      COGx   COGx.sd      COGy   COGy.sd 
+## 16.012947  5.872451 46.898068  1.875646</code></pre>
+<pre class="r"><code># For weighting cells of different area size, we use the vector format:
+COGravity(coordinates(iucn_shrew_10min)[ 
+    !is.na(values(iucn_shrew_10min)),1], 
+ coordinates(iucn_shrew_10min)[!is.na(values(iucn_shrew_10min)),2], 
+ wt = values(area(iucn_shrew_10min))[!is.na(values(iucn_shrew_10min))])</code></pre>
+<pre><code>##      COGx   COGx.sd      COGy   COGy.sd 
+## 16.006306  5.888149 46.832786  1.876829</code></pre>
+<pre class="r"><code># That&#39;s quite a long command call. Let&#39;s simplify it again with a function:
+range.centre &lt;- function(r){
+    COGravity(coordinates(r)[!is.na(values(r)),1], 
+     coordinates(r)[!is.na(values(r)),2], 
+     wt = values(area(r))[!is.na(values(r))])   
+}
+
+range.centre(iucn_shrew_10min)</code></pre>
+<pre><code>##      COGx   COGx.sd      COGy   COGy.sd 
+## 16.006306  5.888149 46.832786  1.876829</code></pre>
+</div>
+</div>
+</div>
+<div id="environmental-data" class="section level1">
+<h1><span class="header-section-number">2</span> Environmental data</h1>
+<p>In biodiversity modelling, we often aim to understand how environment is shaping biodiversity patterns. Thus, additional to our biodiversity data we need environmental information. You should have learned about different environmental data sources in previous courses <span class="citation">(Jetz, McPherson, and Guralnick 2012)</span>. Many data are now available at very high spatial resolution, e.g. lidar data <span class="citation">(Bakx et al. 2019)</span>. However, often, high resolution data are not necessarily available globally - although the data are constantly improving. I can’t give you a full overview over all available data sets. Rather, you should get an idea how you process the data to make best use of them for your biodiversity models.</p>
+<div id="climate-data" class="section level2">
+<h2><span class="header-section-number">2.1</span> Climate data</h2>
+<p>The <code>raster</code> package is offering direct access to some standard repositories; see the help pages <code>?getData</code>. We will use this for extracting climate data from the worldclim data (<a href="http://worldclim.org/" class="uri">http://worldclim.org/</a>)<span class="citation">(Hijmans et al. 2005,<span class="citation">@Hijmans2019</span>)</span>. Please note that there are newer climate data sets out, e.g. the Chelsa climatologies (<a href="http://chelsa-climate.org/" class="uri">http://chelsa-climate.org/</a>) that are preferable in many cases <span class="citation">(Karger et al. 2017)</span>.</p>
+<p>Before we download the climate data, let’s create a directory in today’s folder for storing the climate data.</p>
+<pre class="r"><code>dir.create(&quot;clim_data&quot;)</code></pre>
+<p>Now, we download the 19 bioclimatic variables at a 10’ resolution. Do you know what the 19 bioclimatic variables are? See here: <a href="http://www.worldclim.org/bioclim" class="uri">http://www.worldclim.org/bioclim</a>.</p>
+<pre class="r"><code>clim &lt;- getData(&quot;worldclim&quot;, var=&quot;bio&quot;, res=10, download=T, path=&quot;clim_data&quot;)</code></pre>
+<pre class="r"><code># Now, let&#39;s look at the data:
+clim</code></pre>
+<pre><code>## class      : RasterStack 
+## dimensions : 900, 2160, 1944000, 19  (nrow, ncol, ncell, nlayers)
+## resolution : 0.1666667, 0.1666667  (x, y)
+## extent     : -180, 180, -60, 90  (xmin, xmax, ymin, ymax)
+## crs        : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
+## names      :  bio1,  bio2,  bio3,  bio4,  bio5,  bio6,  bio7,  bio8,  bio9, bio10, bio11, bio12, bio13, bio14, bio15, ... 
+## min values :  -269,     9,     8,    72,   -59,  -547,    53,  -251,  -450,   -97,  -488,     0,     0,     0,     0, ... 
+## max values :   314,   211,    95, 22673,   489,   258,   725,   375,   364,   380,   289,  9916,  2088,   652,   261, ...</code></pre>
+<pre class="r"><code># Can you explain, what a raster stack is?
+plot(clim)</code></pre>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<p>The <code>raster</code> package offers different functionalities manipulate the spatial data, for example aggregating the data to coarser resolutions (<code>aggregate</code>), cropping (<code>crop()</code>), stacking (<code>stack()</code>):</p>
+<pre class="r"><code>aggregate(clim[[1]], fact=6, fun=mean)</code></pre>
+<p>Instead of aggregating the bioclim layers, you can also download the “raw” data needed to calculate bioclimatic variables (prec, tmin, tmax), aggregate these to coarser resolution, and then re-calculate the bioclimatic variables. The latter can be done using the <code>biovars()</code> function in the <em>dismo</em> package.</p>
+<pre class="r"><code>tmin &lt;- getData(&quot;worldclim&quot;, var=&quot;tmin&quot;, res=10, download=T, path=&quot;clim_data&quot;)
+tmax &lt;- getData(&quot;worldclim&quot;, var=&quot;tmax&quot;, res=10, download=T, path=&quot;clim_data&quot;)
+prec &lt;- getData(&quot;worldclim&quot;, var=&quot;prec&quot;, res=10, download=T, path=&quot;clim_data&quot;)</code></pre>
+<pre class="r"><code># Now, recalculate the bioclimatic variables:
+biovars(prec, tmin, tmax)</code></pre>
+<p>You can also write raster stacks to file:</p>
+<pre class="r"><code>writeRaster(clim,filename=&#39;clim_data/bioclim.grd&#39;,)</code></pre>
+<p>Most standard GIS formats can be read in by <code>raster()</code> as well, for example data on land cover, other remote sensing-derived products, etc.</p>
+</div>
+</div>
+<div id="joining-biodiversity-and-environmental-data" class="section level1">
+<h1><span class="header-section-number">3</span> Joining biodiversity and environmental data</h1>
+<p>Last, we can join our biodiversity and environmental data. This then allows comparing the environmental conditions found at the locations of the GBIF data vs. the range maps.</p>
+<p>When we have coordinate data, as we have in the GBIF data, we can use these coordinates to “pierce” through raster layers. That’s one of the easiest ways to extract relevant environmental data for our species records. However, as a very first step we have to decide which GBIF information should be retained in our data set.</p>
+<pre class="r"><code># The GBIF data contain a lot of columns that we probably don&#39;t need:
+head(gbif_shrew)</code></pre>
+<pre class="r"><code># I suggest to keep the following columns for now:
+gbif_shrew2 &lt;- gbif_shrew[,
+    c(&quot;key&quot;, &quot;scientificName&quot;, &quot;decimalLatitude&quot;, &quot;decimalLongitude&quot;, &quot;basisOfRecord&quot;, &quot;speciesKey&quot;, &quot;species&quot;, &quot;year&quot;)]
+
+# Our environmental data are:
+clim</code></pre>
+<pre><code>## class      : RasterStack 
+## dimensions : 900, 2160, 1944000, 19  (nrow, ncol, ncell, nlayers)
+## resolution : 0.1666667, 0.1666667  (x, y)
+## extent     : -180, 180, -60, 90  (xmin, xmax, ymin, ymax)
+## crs        : +proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0 
+## names      :  bio1,  bio2,  bio3,  bio4,  bio5,  bio6,  bio7,  bio8,  bio9, bio10, bio11, bio12, bio13, bio14, bio15, ... 
+## min values :  -269,     9,     8,    72,   -59,  -547,    53,  -251,  -450,   -97,  -488,     0,     0,     0,     0, ... 
+## max values :   314,   211,    95, 22673,   489,   258,   725,   375,   364,   380,   289,  9916,  2088,   652,   261, ...</code></pre>
+<pre class="r"><code># We can extract the environmental data for the GBIF coordinates.
+# Coordinates are always provided as x/y format, in our case lon/lat.
+# The command &quot;extract&quot; is used by several packages, so I tell R explicitly
+# that I want to use the extract function from the raster namespace.
+head(raster::extract(x = clim, 
+    y = data.frame(gbif_shrew2[,c(&#39;decimalLongitude&#39;,&#39;decimalLatitude&#39;)])))</code></pre>
+<pre><code>##      bio1 bio2 bio3 bio4 bio5 bio6 bio7 bio8 bio9 bio10 bio11 bio12 bio13
+## [1,]   74   80   32 6125  209  -41  250  151   30   151    -5  1147   120
+## [2,]   47   94   33 6777  196  -88  284  132    1   132   -42  1495   183
+## [3,]   14   64   28 5644  134  -90  224   85  -55    85   -55  1022   127
+## [4,]   14   64   28 5644  134  -90  224   85  -55    85   -55  1022   127
+## [5,]  -25   53   26 5181   78 -120  198   40  -86    41   -86  1464   162
+## [6,]   23   87   32 6300  163 -107  270  101  -52   101   -59  1054   141
+##      bio14 bio15 bio16 bio17 bio18 bio19
+## [1,]    77    15   342   250   342   270
+## [2,]    89    26   529   293   529   324
+## [3,]    52    28   355   169   355   169
+## [4,]    52    28   355   169   355   169
+## [5,]    96    17   464   310   429   320
+## [6,]    53    34   399   163   399   163</code></pre>
+<pre class="r"><code># Our new data frame:
+gbif_shrew2 &lt;- cbind(gbif_shrew2, raster::extract(x = clim, y = data.frame(gbif_shrew2[,c(&#39;decimalLongitude&#39;,&#39;decimalLatitude&#39;)])))</code></pre>
+<p>We now have to inspect the data again to see whether we have any missing values or any other issues.</p>
+<pre class="r"><code>summary(gbif_shrew2)</code></pre>
+<p>For the range map data, let’s just save the raster layers for now without extracting points. As the range maps strictly constitute presence-only data, we will have to think about what we define as absences. We’ll come back to this issue in later sessions. For now, we can simply stack all necessary information and keep it safe for later usage.</p>
+<pre class="r"><code># We make a data frame from the rasterized range map
+iucn_shrew_df &lt;- data.frame(rasterToPoints(iucn_shrew_10min))
+names(iucn_shrew_df)[3] &lt;- &#39;occ&#39;
+
+# Extract the environmental variables:
+iucn_shrew_df &lt;- cbind(iucn_shrew_df, raster::extract(x = clim, y = iucn_shrew_df[,1:2]))</code></pre>
+<p>Now we can compare the range of climate variables associated with the GBIF data and the IUCN range map data.</p>
+<pre class="r"><code>summary(gbif_shrew2$bio1)
+summary(iucn_shrew_df$bio1)</code></pre>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references">
+<div id="ref-Bakx2019">
+<p>Bakx, Tristan R. M., Zsófia Koma, Arie C. Seijmonsbergen, and W. Daniel Kissling. 2019. “Use and Categorization of Light Detection and Ranging Vegetation Metrics in Avian Diversity and Species Distribution Research.” <em>Diversity and Distributions</em> 25 (7): 1045–59. <a href="https://doi.org/10.1111/ddi.12915">https://doi.org/10.1111/ddi.12915</a>.</p>
+</div>
+<div id="ref-Hijmans2019">
+<p>Hijmans, R. J. 2019. <em>Raster: Geographic Data Analysis and Modeling</em>. <a href="https://CRAN.R-project.org/package=raster">https://CRAN.R-project.org/package=raster</a>.</p>
+</div>
+<div id="ref-Hijmans2005">
+<p>Hijmans, R. J., S. E. Cameron, J. L. Parra, P. G. Jones, and A. Jarvis. 2005. “Very High Resolution Interpolated Climate Surfaces for Global Land Areas.” <em>International Journal of Climatology</em> 25 (15): 1965–78. <a href="https://doi.org/10.1002/joc.1276">https://doi.org/10.1002/joc.1276</a>.</p>
+</div>
+<div id="ref-Hurlbert2007">
+<p>Hurlbert, Allen H., and Walter Jetz. 2007. “Species Richness, Hotspots, and the Scale Dependence of Range Maps in Ecology and Conservation.” <em>PNAS</em> 104: 13384–9.</p>
+</div>
+<div id="ref-Jetz2012a">
+<p>Jetz, Walter, Jana M. McPherson, and Robert P. Guralnick. 2012. “Integrating Biodiversity Distribution Knowledge: Toward a Global Map of Life.” <em>Trends in Ecology &amp; Evolution</em> 27: 151–59.</p>
+</div>
+<div id="ref-Karger2017">
+<p>Karger, Dirk Nikolaus, Olaf Conrad, Juergen Boehner, Tobias Kawohl, Holger Kreft, Rodrigo Wilber Soria-Auza, Niklaus E. Zimmermann, H. Peter Linder, and Michael Kessler. 2017. “Climatologies at High Resolution for the Earth’s Land Surface Areas.” <em>Scientific Data</em> 4 (September). Springer Nature: 170122.</p>
+</div>
+<div id="ref-Krosby2015">
+<p>Krosby, Meade, Chad B. Wilsey, Jenny L. McGuire, Jennifer M. Duggan, Theresa M. Nogeire, Julie A. Heinrichs, Joshua J. Tewksbury, and Joshua J. Lawler. 2015. “Climate-Induced Range Overlap Among Closely Related Species.” <em>Nature Climate Change</em> 5: 883–86.</p>
+</div>
+<div id="ref-Zizka2019">
+<p>Zizka, Alexander, Daniele Silvestro, Tobias Andermann, Josue Azevedo, Camila Duarte Ritter, Daniel Edler, Harith Farooq, et al. 2019. “CoordinateCleaner : Standardized Cleaning of Occurrence Records from Biological Collection Databases.” <em>Methods in Ecology and Evolution</em> 10 (5): 744–51. <a href="https://doi.org/10.1111/2041-210x.13152">https://doi.org/10.1111/2041-210x.13152</a>.</p>
+</div>
+</div>
 </div>
 
 <!DOCTYPE html>

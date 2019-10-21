@@ -783,4 +783,43 @@ biogeography.},
   timestamp = {2008.02.20},
 }
 
+@Book{Dormann2013a,
+  title     = {Parametrische Statistik},
+  publisher = {Springer},
+  year      = {2013},
+  author    = {Carsten F. Dormann},
+  owner     = {DZ},
+  timestamp = {2019.10.17},
+}
+
+@Article{Zizka2019,
+  author    = {Alexander Zizka and Daniele Silvestro and Tobias Andermann and Josue Azevedo and Camila Duarte Ritter and Daniel Edler and Harith Farooq and Andrei Herdean and Maria Ariza and Ruud Scharn and Sten Svantesson and Niklas Wengstroem and Vera Zizka and Alexandre Antonelli},
+  title     = {{CoordinateCleaner} : Standardized cleaning of occurrence records from biological collection databases},
+  journal   = {Methods in Ecology and Evolution},
+  year      = {2019},
+  volume    = {10},
+  number    = {5},
+  pages     = {744--751},
+  doi       = {10.1111/2041-210x.13152},
+  file      = {:readme/papers/Zizka_etal_MEE_2019.pdf:PDF},
+  owner     = {DZ},
+  timestamp = {2019.05.08},
+}
+
+@Article{Bakx2019,
+  author    = {Tristan R. M. Bakx and Zs{\'{o}}fia Koma and Arie C. Seijmonsbergen and W. Daniel Kissling},
+  title     = {Use and categorization of Light Detection and Ranging vegetation metrics in avian diversity and species distribution research},
+  journal   = {Diversity and Distributions},
+  year      = {2019},
+  volume    = {25},
+  number    = {7},
+  pages     = {1045-1059},
+  doi       = {10.1111/ddi.12915},
+  file      = {:readme/papers/Bakx_etal_DDI_2019.pdf:PDF},
+  groups    = {remote sensing},
+  keywords  = { airborne laser scanning animal diversity habitat use LiDAR literature review species distribution modelling structural heterogeneity vertical vegetation structure },
+  owner     = {DZ},
+  timestamp = {2019.07.15},
+}
+
 @Comment{jabref-meta: databaseType:bibtex;}
