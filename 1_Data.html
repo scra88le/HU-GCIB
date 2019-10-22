@@ -424,6 +424,9 @@ div.tocify {
 
 
 <hr />
+<div class="alert alert-info">
+<p>Before we start into this series of practicals, you should spend a minute thinking about your folder structures. I recommend having separate folders for your R scripts and for your data, potentially also a results folder. Today, we will learn about different kinds of data we need for biodiversity modelling and will download different data. For improved overview, you may consider to make different subfolder within your data folder to structure this further.</p>
+</div>
 <div id="biodiversity-data" class="section level1">
 <h1><span class="header-section-number">1</span> Biodiversity data</h1>
 <p>Many different types of biodiversity data exist, e.g. from standardised monitoring schemes, citizen science platforms, or expert knowledge. Each comes with own challenges. Here, we simply want to learn how we can obtain and process representative types of biodiversity data. Today, we will mainly deal with publicly available data, in particular occurrence records from GBIF and expert range maps from the IUCN.</p>
@@ -440,7 +443,7 @@ occ_count()</code></pre>
 <pre><code>## Registered S3 method overwritten by &#39;crul&#39;:
 ##   method                 from
 ##   as.character.form_file httr</code></pre>
-<pre><code>## [1] 1349468046</code></pre>
+<pre><code>## [1] 1349472737</code></pre>
 <pre class="r"><code># number of observations:
 occ_count(basisOfRecord=&#39;OBSERVATION&#39;)</code></pre>
 <pre><code>## [1] 19662024</code></pre>
@@ -495,6 +498,7 @@ points(gbif_shrew$decimalLongitude[cl_gbif_shrew$.summary], gbif_shrew$decimalLa
 <p><img src="1_Data_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <pre class="r"><code>gbif_shrew &lt;- gbif_shrew[cl_gbif_shrew$.summary,]</code></pre>
 <p>Have a look at <span class="citation">Zizka et al. (2019)</span> and the examples by Robert Hijmans (<a href="https://rspatial.org/raster/sdm/2_sdm_occdata.html">http://rspatial.org</a>) for finding out about other typical problems with GBIF and how to deal with these.</p>
+<p>Finally, save your data, for example by writing the final data frame to file or by saving the R object(s).</p>
 </div>
 </div>
 <div id="iucn-range-maps" class="section level2">
@@ -503,7 +507,7 @@ points(gbif_shrew$decimalLongitude[cl_gbif_shrew$.summary], gbif_shrew$decimalLa
 <p>Let’s stick with the Alpine shrew example. I have already downloaded the range map as shapefile; you can find this in the moodle course. (For all external readers, please just download the shapefile from the IUCN website.) We will use the package <em>raster</em> for reading in the shapefiles.</p>
 <pre class="r"><code>library(raster)
 
-# How is our shapefile called?  
+# How is our shapefile called? and where is it?
 dir()</code></pre>
 <pre><code>##  [1] &quot;_footer.html&quot;           &quot;_site&quot;                 
 ##  [3] &quot;_site.yml&quot;              &quot;0_Intro.Rmd&quot;           
@@ -516,8 +520,10 @@ dir()</code></pre>
 ## [17] &quot;GCIB-website.Rproj&quot;     &quot;gcib.bib&quot;              
 ## [19] &quot;gcib.bib.bak&quot;           &quot;gcib.bib.sav&quot;          
 ## [21] &quot;index.Rmd&quot;              &quot;schedule.Rmd&quot;</code></pre>
-<pre class="r"><code># Read in the shapefile:</code></pre>
-<pre class="r"><code>iucn_shrew = shapefile(&#39;IUCN_Sorex_alpinus.shp&#39;)</code></pre>
+<pre class="r"><code>dir(&#39;data&#39;)</code></pre>
+<pre><code>## character(0)</code></pre>
+<pre class="r"><code># Read in the shapefile (adjust the path to your folder structure!):
+iucn_shrew = shapefile(&#39;data/IUCN_Sorex_alpinus.shp&#39;)</code></pre>
 <pre class="r"><code># The shapefile is recognized as SpatialPolygonsDataFrame:
 iucn_shrew</code></pre>
 <pre><code>## class       : SpatialPolygonsDataFrame 
@@ -634,8 +640,9 @@ range.centre(iucn_shrew_10min)</code></pre>
 <p>The <code>raster</code> package is offering direct access to some standard repositories; see the help pages <code>?getData</code>. We will use this for extracting climate data from the worldclim data (<a href="http://worldclim.org/" class="uri">http://worldclim.org/</a>)<span class="citation">(Hijmans et al. 2005,<span class="citation">@Hijmans2019</span>)</span>. Please note that there are newer climate data sets out, e.g. the Chelsa climatologies (<a href="http://chelsa-climate.org/" class="uri">http://chelsa-climate.org/</a>) that are preferable in many cases <span class="citation">(Karger et al. 2017)</span>.</p>
 <p>Before we download the climate data, let’s create a directory in today’s folder for storing the climate data.</p>
 <pre class="r"><code>dir.create(&quot;clim_data&quot;)</code></pre>
-<p>Now, we download the 19 bioclimatic variables at a 10’ resolution. Do you know what the 19 bioclimatic variables are? See here: <a href="http://www.worldclim.org/bioclim" class="uri">http://www.worldclim.org/bioclim</a>.</p>
-<pre class="r"><code>clim &lt;- getData(&quot;worldclim&quot;, var=&quot;bio&quot;, res=10, download=T, path=&quot;clim_data&quot;)</code></pre>
+<p>Now, we download the 19 bioclimatic variables at a 10’ resolution. Do you know what the 19 bioclimatic variables are? See here: <a href="http://www.worldclim.org/bioclim" class="uri">http://www.worldclim.org/bioclim</a>. Remember to think about your folder structure, where you want to store the climate data!</p>
+<pre class="r"><code># You may have to adjust the path to your folder structure:
+clim &lt;- getData(&quot;worldclim&quot;, var=&quot;bio&quot;, res=10, download=T, path=&quot;data/clim_data&quot;)</code></pre>
 <pre class="r"><code># Now, let&#39;s look at the data:
 clim</code></pre>
 <pre><code>## class      : RasterStack 
@@ -652,13 +659,14 @@ plot(clim)</code></pre>
 <p>The <code>raster</code> package offers different functionalities manipulate the spatial data, for example aggregating the data to coarser resolutions (<code>aggregate</code>), cropping (<code>crop()</code>), stacking (<code>stack()</code>):</p>
 <pre class="r"><code>aggregate(clim[[1]], fact=6, fun=mean)</code></pre>
 <p>Instead of aggregating the bioclim layers, you can also download the “raw” data needed to calculate bioclimatic variables (prec, tmin, tmax), aggregate these to coarser resolution, and then re-calculate the bioclimatic variables. The latter can be done using the <code>biovars()</code> function in the <em>dismo</em> package.</p>
-<pre class="r"><code>tmin &lt;- getData(&quot;worldclim&quot;, var=&quot;tmin&quot;, res=10, download=T, path=&quot;clim_data&quot;)
-tmax &lt;- getData(&quot;worldclim&quot;, var=&quot;tmax&quot;, res=10, download=T, path=&quot;clim_data&quot;)
-prec &lt;- getData(&quot;worldclim&quot;, var=&quot;prec&quot;, res=10, download=T, path=&quot;clim_data&quot;)</code></pre>
+<pre class="r"><code># You may have to adjust the path to your folder structure:
+tmin &lt;- getData(&quot;worldclim&quot;, var=&quot;tmin&quot;, res=10, download=T, path=&quot;data/clim_data&quot;)
+tmax &lt;- getData(&quot;worldclim&quot;, var=&quot;tmax&quot;, res=10, download=T, path=&quot;data/clim_data&quot;)
+prec &lt;- getData(&quot;worldclim&quot;, var=&quot;prec&quot;, res=10, download=T, path=&quot;data/clim_data&quot;)</code></pre>
 <pre class="r"><code># Now, recalculate the bioclimatic variables:
 biovars(prec, tmin, tmax)</code></pre>
 <p>You can also write raster stacks to file:</p>
-<pre class="r"><code>writeRaster(clim,filename=&#39;clim_data/bioclim.grd&#39;,)</code></pre>
+<pre class="r"><code>writeRaster(clim,filename=&#39;data/clim_data/bioclim.grd&#39;,)</code></pre>
 <p>Most standard GIS formats can be read in by <code>raster()</code> as well, for example data on land cover, other remote sensing-derived products, etc.</p>
 </div>
 </div>
@@ -716,6 +724,7 @@ iucn_shrew_df &lt;- cbind(iucn_shrew_df, raster::extract(x = clim, y = iucn_shre
 <p>Now we can compare the range of climate variables associated with the GBIF data and the IUCN range map data.</p>
 <pre class="r"><code>summary(gbif_shrew2$bio1)
 summary(iucn_shrew_df$bio1)</code></pre>
+<p>Remember to save your resulting data frames!</p>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1>References</h1>
