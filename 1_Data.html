@@ -443,13 +443,13 @@ occ_count()</code></pre>
 <pre><code>## Registered S3 method overwritten by &#39;crul&#39;:
 ##   method                 from
 ##   as.character.form_file httr</code></pre>
-<pre><code>## [1] 1349472737</code></pre>
+<pre><code>## [1] 1350001165</code></pre>
 <pre class="r"><code># number of observations:
 occ_count(basisOfRecord=&#39;OBSERVATION&#39;)</code></pre>
 <pre><code>## [1] 19662024</code></pre>
 <pre class="r"><code># number of occurrences reported for Germany:
 occ_count(country=isocodes[grep(&quot;Germany&quot;, isocodes$name), &quot;code&quot;])</code></pre>
-<pre><code>## [1] 37830799</code></pre>
+<pre><code>## [1] 37843805</code></pre>
 <pre class="r"><code># number of observations reported for Germany:
 occ_count(country=isocodes[grep(&quot;Germany&quot;, isocodes$name), &quot;code&quot;],basisOfRecord=&#39;OBSERVATION&#39;)</code></pre>
 <pre><code>## [1] 299490</code></pre>
@@ -497,7 +497,7 @@ points(gbif_shrew$decimalLongitude, gbif_shrew$decimalLatitude, col=&#39;red&#39
 points(gbif_shrew$decimalLongitude[cl_gbif_shrew$.summary], gbif_shrew$decimalLatitude[cl_gbif_shrew$.summary], col=&#39;blue&#39;,  pch=18)</code></pre>
 <p><img src="1_Data_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <pre class="r"><code>gbif_shrew &lt;- gbif_shrew[cl_gbif_shrew$.summary,]</code></pre>
-<p>Have a look at <span class="citation">Zizka et al. (2019)</span> and the examples by Robert Hijmans (<a href="https://rspatial.org/raster/sdm/2_sdm_occdata.html">http://rspatial.org</a>) for finding out about other typical problems with GBIF and how to deal with these.</p>
+<p>Have a look at <span class="citation">Zizka et al. (2019)</span> and the examples by Robert Hijmans (<a href="https://rspatial.org/raster/sdm/2_sdm_occdata.html">http://rspatial.org</a>) for finding out about other typical problems with GBIF and how to deal with these. For example, how do we check for duplicates and how could we remove them?</p>
 <p>Finally, save your data, for example by writing the final data frame to file or by saving the R object(s).</p>
 </div>
 </div>
@@ -570,7 +570,8 @@ points(gbif_shrew$decimalLongitude, gbif_shrew$decimalLatitude, col=&#39;red&#39
 <pre class="r"><code>plot(wrld_simpl,xlim=c(5,30), ylim=c(40,55))
 plot(iucn_shrew, col=&#39;blue&#39;, add=T)
 plot(iucn_shrew_10min, add=T, alpha=0.6)</code></pre>
-<p><img src="1_Data_files/figure-html/unnamed-chunk-9-1.png" width="672" /> What rule is being used to determine whether polygon data is transferred to a raster cell? Check out th help page <code>?rasterize</code> to find out.</p>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p>What rule is being used to determine whether polygon data is transferred to a raster cell? Check out the help page <code>?rasterize</code> to find out.</p>
 </div>
 <div id="calculating-range-size" class="section level3">
 <h3><span class="header-section-number">1.2.2</span> Calculating range size</h3>
@@ -659,7 +660,9 @@ plot(clim)</code></pre>
 <p>The <code>raster</code> package offers different functionalities manipulate the spatial data, for example aggregating the data to coarser resolutions (<code>aggregate</code>), cropping (<code>crop()</code>), stacking (<code>stack()</code>):</p>
 <pre class="r"><code>aggregate(clim[[1]], fact=6, fun=mean)</code></pre>
 <p>Instead of aggregating the bioclim layers, you can also download the “raw” data needed to calculate bioclimatic variables (prec, tmin, tmax), aggregate these to coarser resolution, and then re-calculate the bioclimatic variables. The latter can be done using the <code>biovars()</code> function in the <em>dismo</em> package.</p>
-<pre class="r"><code># You may have to adjust the path to your folder structure:
+<pre class="r"><code>library(dismo)
+
+# You may have to adjust the path to your folder structure:
 tmin &lt;- getData(&quot;worldclim&quot;, var=&quot;tmin&quot;, res=10, download=T, path=&quot;data/clim_data&quot;)
 tmax &lt;- getData(&quot;worldclim&quot;, var=&quot;tmax&quot;, res=10, download=T, path=&quot;data/clim_data&quot;)
 prec &lt;- getData(&quot;worldclim&quot;, var=&quot;prec&quot;, res=10, download=T, path=&quot;data/clim_data&quot;)</code></pre>
@@ -673,6 +676,8 @@ biovars(prec, tmin, tmax)</code></pre>
 <div id="joining-biodiversity-and-environmental-data" class="section level1">
 <h1><span class="header-section-number">3</span> Joining biodiversity and environmental data</h1>
 <p>Last, we can join our biodiversity and environmental data. This then allows comparing the environmental conditions found at the locations of the GBIF data vs. the range maps.</p>
+<div id="joining-gbif-and-environmental-data" class="section level2">
+<h2><span class="header-section-number">3.1</span> Joining GBIF and environmental data</h2>
 <p>When we have coordinate data, as we have in the GBIF data, we can use these coordinates to “pierce” through raster layers. That’s one of the easiest ways to extract relevant environmental data for our species records. However, as a very first step we have to decide which GBIF information should be retained in our data set.</p>
 <pre class="r"><code># The GBIF data contain a lot of columns that we probably don&#39;t need:
 head(gbif_shrew)</code></pre>
@@ -714,7 +719,11 @@ head(raster::extract(x = clim,
 gbif_shrew2 &lt;- cbind(gbif_shrew2, raster::extract(x = clim, y = data.frame(gbif_shrew2[,c(&#39;decimalLongitude&#39;,&#39;decimalLatitude&#39;)])))</code></pre>
 <p>We now have to inspect the data again to see whether we have any missing values or any other issues.</p>
 <pre class="r"><code>summary(gbif_shrew2)</code></pre>
-<p>For the range map data, let’s just save the raster layers for now without extracting points. As the range maps strictly constitute presence-only data, we will have to think about what we define as absences. We’ll come back to this issue in later sessions. For now, we can simply stack all necessary information and keep it safe for later usage.</p>
+<p>Because we superimposed an arbitrary resolution now when joining the GBIF and environmental data, we could potentially have multiple records in a single raster cell. How could we check for this and how could we remove this problem?</p>
+</div>
+<div id="joining-range-map-data-and-environmental-data" class="section level2">
+<h2><span class="header-section-number">3.2</span> Joining range map data and environmental data</h2>
+<p>For the range map data, we can proceed analogous to the GBIF example by taking the coordinates of the (rasterized) range map data and piercing through the environmental raster layers.</p>
 <pre class="r"><code># We make a data frame from the rasterized range map
 iucn_shrew_df &lt;- data.frame(rasterToPoints(iucn_shrew_10min))
 names(iucn_shrew_df)[3] &lt;- &#39;occ&#39;
@@ -725,6 +734,7 @@ iucn_shrew_df &lt;- cbind(iucn_shrew_df, raster::extract(x = clim, y = iucn_shre
 <pre class="r"><code>summary(gbif_shrew2$bio1)
 summary(iucn_shrew_df$bio1)</code></pre>
 <p>Remember to save your resulting data frames!</p>
+</div>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1>References</h1>
