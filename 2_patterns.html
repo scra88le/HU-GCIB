@@ -20,6 +20,9 @@
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -251,6 +254,63 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -258,6 +318,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -353,7 +423,285 @@ $(document).ready(function () {
 </div>
 
 
+<p>Today we wander a little away from the strict learning objectives and attempt some first analyses of biodiversity patterns to get a feeling of the different aspects of biodiversity and biodiversity change that could be investigated. In contrast to the other weeks’ tutorials, I do not give a full script here but rather want to encourage to do some additional analyses yourself. To this end, you will find tasks to work on at the end of each section.</p>
+<div id="distribution-data" class="section level1">
+<h1><span class="header-section-number">1</span> Distribution data</h1>
+<p>All analyses of today will be based on a dataset of British breeding and wintering birds recently made available <span class="citation">Gillings et al. (2019)</span>. The data contain breeding bird records in 20-year cycles (1968-1972, 1988-1991, 2008-2011 and) wintering bird records in 30-year cycles (1981/1982-1983-1984, 2007/2008-2010/2011) at a 10 km spatial resolution throughout Britain, Ireland, the Isle of Man and the Channel Islands. Some rarer species are represented at 20 or 50 km resolutions. Here, we will concentrate on bird records from Britain at 10 km resolution. The data are available through the British Trust of Ornithology (www.bto.org) and can be downloaded <a href="https://www.bto.org/sites/default/files/atlas_open_data_files.zip">here</a>. Please download the data and save it in an appropriate folder (e.g. in <em>data</em> folder).</p>
+<p>We can now read in the data into R. There are different files available in the folder that are further detailed in the corresponding publication <span class="citation">(Gillings et al. 2019)</span>. The combined distribution dataset (<code>distributions.csv</code>) contains records of 458 species over the different years and seasons, mainly at 10 km resolution. The combined distirbution change dataset (<code>distribution_changes.csv</code>) describes changes in occupancy between the different periods. Additionally a taxonomic look-up table (<code>species_lookup.csv</code>) and a coordinate look-up table (<code>grid_square_coordinates_lookup.csv</code>) are provided. The last file (<code>percent_benchmark_species_detected.csv</code>) summarises the percentage of benchmark species detected in each 10 km cell and provides information on recording effort.</p>
+<pre class="r"><code># Read in the combined distribution dataset:
+bird_dist &lt;- read.table(&#39;data/distributions.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
 
+# Read in the combined distribution change dataset:
+bird_distchange &lt;- read.table(&#39;data/distribution_changes.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
+
+# Read in the coordinate look-up table:
+bird_coords &lt;- read.table(&#39;data/grid_square_coordinates_lookup.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
+
+# Read in the taxonomic look-up table:
+bird_spp &lt;- read.table(&#39;data/species_lookup.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)</code></pre>
+<p>Let’s take a first look at the data and find out what information is contained in there. For example, what does the status information mean? For details, please read the companion article <span class="citation">(Gillings et al. 2019)</span>.</p>
+<pre class="r"><code>unique(bird_spp$scientific_name)</code></pre>
+<pre class="r"><code>unique(bird_dist$period)</code></pre>
+<pre><code>## [1] &quot;1968-72&quot;         &quot;2008-11&quot;         &quot;2007/08-10/11&quot;   &quot;1980/81-1982/83&quot;
+## [5] &quot;1988-91&quot;</code></pre>
+<pre class="r"><code>unique(bird_dist$status)</code></pre>
+<pre><code>## [1] &quot;Confirmed&quot; &quot;Probable&quot;  &quot;Possible&quot;  &quot;Present&quot;   &quot;Breeding&quot;  &quot;Seen&quot;</code></pre>
+<div id="data-filtering" class="section level2">
+<h2><span class="header-section-number">1.1</span> Data filtering</h2>
+<p>I suggest concentrating on records with the highest confidence, the British Isles only, and the 10 km resolution only. Also, we only want to work at the taxonomic rank of species.</p>
+<pre class="r"><code># Filter taxonomic rank:
+speccodes &lt;- subset(bird_spp, taxonomic_rank==&#39;Species&#39;)$speccode
+spp &lt;- subset(bird_spp, taxonomic_rank==&#39;Species&#39;)$scientific_name
+
+# Bird distirbution records
+bird_dist_summer &lt;- subset(bird_dist, resolution==10 &amp; season==&#39;B&#39; &amp; island==&#39;B&#39; &amp; status %in% c(&#39;Confirmed&#39;,&#39;Breeding&#39;) &amp; speccode %in% speccodes)
+bird_dist_winter &lt;- subset(bird_dist, resolution==10 &amp; season==&#39;W&#39; &amp; island==&#39;B&#39; &amp; speccode %in% speccodes)
+
+# Bird distribution changes
+bird_distchange_summer &lt;- subset(bird_distchange,season==&#39;B&#39; &amp; resolution==10 &amp; island==&#39;B&#39; &amp; speccode %in% speccodes)
+bird_distchange_winter &lt;- subset(bird_distchange,season==&#39;W&#39; &amp; resolution==10 &amp; island==&#39;B&#39; &amp; speccode %in% speccodes)</code></pre>
+</div>
+<div id="data-processing-species-richness" class="section level2">
+<h2><span class="header-section-number">1.2</span> Data processing: species richness</h2>
+<p>I would first like to analyse some aspects of species richness over the different periods. To this end, we need to sum single species per period. For transforming the data into rasters, it is also helpful to reshape them from long to wide format.</p>
+<pre class="r"><code># species richness summer
+bird_SR_summer &lt;- aggregate(bird_dist_summer[,&#39;speccode&#39;], by = list(period = bird_dist_summer$period, grid = bird_dist_summer$grid), FUN = &#39;length&#39;)
+bird_SR_summer &lt;- reshape(bird_SR_summer, direction=&#39;wide&#39;, timevar=&#39;period&#39;, idvar=&#39;grid&#39;,sep=&#39;&#39;)
+
+# species richness winter
+bird_SR_winter &lt;- aggregate(bird_dist_winter[,&#39;speccode&#39;], by = list(period = bird_dist_winter$period, grid = bird_dist_winter$grid), FUN = &#39;length&#39;)
+bird_SR_winter &lt;- reshape(bird_SR_winter, direction=&#39;wide&#39;, timevar=&#39;period&#39;, idvar=&#39;grid&#39;,sep=&#39;&#39;)</code></pre>
+<p>Now, we would like to make rasters of the species richness data frames. The coordinates are provided in the British National Grid, with grid letters and grid digits. In the coordinates look-up table, we find the longitudes and latitudes for the grid cells. However, as the British National Grid is based on a transverse Mercator projection, the longitudes and latitudes are not equally spaced in the geographic projection. We could still rasterize them but I think it is actually easier to work on the British National Grid. We can easily convert the grid letters and grid digits in the so-called Easting and Northing coordinates. Conversion functions can be found in the internet, and there are even R packages that do this, e.g. <code>rnrfa</code>. For simplicity, I have converted them already and you can download it <a href="files/UK_10km_gridref.csv">here</a>.</p>
+<pre class="r"><code># Load grid references:
+grid_ref &lt;- read.table(&#39;data/UK_10km_gridref.csv&#39;,header=T,sep=&#39;,&#39;)</code></pre>
+<pre class="r"><code>proj_UK &lt;- &#39;+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs&#39;
+
+# Make raster of species richness
+library(raster)</code></pre>
+<pre><code>## Loading required package: sp</code></pre>
+<pre class="r"><code>r_bird_SR_summer &lt;- rasterFromXYZ(merge(bird_SR_summer, grid_ref)[,c(5:6,2:4)], crs=proj_UK)
+r_bird_SR_winter &lt;- rasterFromXYZ(merge(bird_SR_winter, grid_ref)[,c(4:5,2:3)], crs=proj_UK)
+
+spplot(r_bird_SR_summer)</code></pre>
+<p><img src="2_patterns_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre class="r"><code>spplot(r_bird_SR_winter)</code></pre>
+<p><img src="2_patterns_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
+</div>
+<div id="tasks-i" class="section level2">
+<h2><span class="header-section-number">1.3</span> Tasks I</h2>
+<p>Today, you should start working on your own data processing solutions and data analyses.</p>
+<div class="alert alert-info">
+<p><strong>Task 1:</strong></p>
+<p>Analyse different aspects of the latitudinal gradient of biodiversity <span class="citation">(Gaston 2000)</span>.</p>
+<ul>
+<li>plot species richness against latitude</li>
+<li>plot species richness against mean annual temperature and against annual precipitation</li>
+</ul>
+</div>
+<p>For the latter task, you will have to retrieve climatic data at the appropriate resolution and in the appriopriate projection. Look up the function <code>?projectRaster</code> to find out how to reproject rasters.</p>
+<p><br></p>
+<div class="alert alert-info">
+<p><strong>Task 2:</strong></p>
+<p>Analyse species-level changes:</p>
+<ul>
+<li>How many breeding bird species had decreasing/stable/increasing range sizes 1970-2010?</li>
+<li>Map the species richness of these three groups in 1970 and in 2010</li>
+<li>Map the difference in richness between 1970 and 2010 for these three groups</li>
+</ul>
+</div>
+<p>As a small hint, the species-level changes can be retrieved from our data frame <code>bird_distchange_summer</code>.</p>
+<pre class="r"><code>table(bird_distchange_summer$interval)</code></pre>
+<pre><code>## 
+## 1970-1990 1970-2010 1990-2010 
+##    242343    255510    248483</code></pre>
+<pre class="r"><code>table(subset(bird_distchange_summer, interval==&#39;1970-2010&#39;)$n_tenkms_loss)</code></pre>
+<pre><code>## 
+##      0      1 
+## 220672  34838</code></pre>
+</div>
+</div>
+<div id="the-iucn-red-list" class="section level1">
+<h1><span class="header-section-number">2</span> The IUCN red list</h1>
+<p>A useful resource when analysing diversity changes, species range changes and population changes is the IUCN Red List of threatened species: www.iucnredlist.org <span class="citation">(IUCN 2019)</span>. This provides information on the global conservation status of species, specifically of animals, fungi and plant species. The IUCN has defined a set of criteria to evaluate the extinction risk of species. According to these criteria, species are classified into nine different categories although strictly only five categories describe the conservation status - from least concern to critically endangered <span class="citation">(Fig. 1; IUCN 2012)</span>.</p>
+<div class="figure">
+<img src="figures/redlist.png" alt="**Figure 1. The IUCN red list categories. Adapted from [@IUCN2012].**" width="70%" />
+<p class="caption">
+<strong>Figure 1. The IUCN red list categories. Adapted from <span class="citation">(IUCN 2012)</span>.</strong>
+</p>
+</div>
+<p>The IUCN distinguishes five criteria that are used to classify species into one of the three threatened categories (Fig. 1; <span class="citation">IUCN (2012)</span>):</p>
+<ul>
+<li>A. Population size reduction</li>
+<li>B. Extent of occurrence (B1) or Area of occupancy (B2)</li>
+<li>C. Small population size and decline</li>
+<li>D. Very small or restricted population</li>
+<li>E. Quantitative analysis (probability of extinction within next 100 years)</li>
+</ul>
+<p>All of these information (the red list category, the relevant assessment criteria, the population trend, etc.) are provided by the IUCN. We can look at all these information online, e.g. for the <a href="https://www.iucnredlist.org/species/22728432/132658315#conservation-actions">Balearic Shearwater</a>.</p>
+<p>Of course, if you want to analyse your species data in light of these IUCN assessments, it can become very tedious to look up all information by hand. The IUCN red list team provides an API for this purpose, and the R package <code>rredlist</code> is a client to access this <a href="http://apiv3.iucnredlist.org/api/v3/docs">IUCN red list API</a>. It requires an <a href="http://apiv3.iucnredlist.org/api/v3/docs">API key / a token</a> to use the API. You have to indicate your research objectives for using the API.</p>
+<p>I have got permission to use some red list information for the UK breeding birds in class, but I am not allowed to post them. Thus, course participants can download the data (<em>UK_birds_redlist_status.csv</em> and <em>UK_birds_redlist_threats.csv</em>) in the secured moodle folder (but please be aware that the <a href="https://www.iucnredlist.org/terms/terms-of-use">IUCN terms of use</a> apply!). External readers are advised to generate an API token:</p>
+<pre class="r"><code>library(rredlist)
+rl_use_iucn()</code></pre>
+<div id="red-list-categories" class="section level2">
+<h2><span class="header-section-number">2.1</span> Red list categories</h2>
+<p>If you have your own IUCN API key, you can easily download the information on species’ red list categories:</p>
+<pre class="r"><code># Download red list category for single species
+rl_search(&#39;Gavia stellata&#39;, key= MY_IUCN_REDLIST_KEY)
+
+# Download red list categories for all species
+redlist_status &lt;- do.call(rbind,lapply(spp,FUN=function(sp){rl_search(sp, key= MY_IUCN_REDLIST_KEY)$result}))</code></pre>
+<p>Course participants can download the data from moodle and read it in:</p>
+<pre class="r"><code>redlist_status &lt;- read.table(&#39;data/UK_birds_redlist_status.csv&#39;, header=T, sep=&#39;,&#39;)</code></pre>
+<p>Here is an example of the kind of information in the table. Compare this to the information given on the IUCN website, e.g. for the <a href="https://www.iucnredlist.org/species/22728432/132658315#conservation-actions">Balearic Shearwater</a>.</p>
+<pre class="r"><code>redlist_status[1:10,10:20]</code></pre>
+<pre><code>##              authority published_year assessment_date category
+## 1  (Pontoppidan, 1763)           2018      2018-08-07       LC
+## 2     (Linnaeus, 1758)           2018      2018-08-07       LC
+## 3     (Brünnich, 1764)           2018      2018-08-07       LC
+## 4         (Gray, 1859)           2018      2018-08-07       NT
+## 5     (Linnaeus, 1758)           2016      2016-10-01       LC
+## 6       (Pallas, 1764)           2017      2016-10-01       LC
+## 7     (Linnaeus, 1758)           2018      2018-08-07       LC
+## 8     (Boddaert, 1783)           2018      2018-08-07       LC
+## 9     (Linnaeus, 1758)           2018      2018-08-07       VU
+## 10         Brehm, 1831           2018      2018-08-07       LC
+##             criteria population_trend marine_system freshwater_system
+## 1               &lt;NA&gt;       Decreasing          TRUE              TRUE
+## 2               &lt;NA&gt;       Decreasing          TRUE              TRUE
+## 3               &lt;NA&gt;           Stable          TRUE              TRUE
+## 4               &lt;NA&gt;       Decreasing          TRUE              TRUE
+## 5               &lt;NA&gt;           Stable         FALSE              TRUE
+## 6               &lt;NA&gt;       Decreasing          TRUE              TRUE
+## 7               &lt;NA&gt;          Unknown          TRUE              TRUE
+## 8               &lt;NA&gt;       Decreasing          TRUE              TRUE
+## 9  A2abce+3bce+4abce       Decreasing          TRUE              TRUE
+## 10              &lt;NA&gt;          Unknown          TRUE              TRUE
+##    terrestrial_system               assessor                 reviewer
+## 1                TRUE BirdLife International              Westrip, J.
+## 2                TRUE BirdLife International               Martin, R.
+## 3                TRUE BirdLife International              Westrip, J.
+## 4                TRUE BirdLife International              Westrip, J.
+## 5                TRUE BirdLife International Butchart, S. &amp; Symes, A.
+## 6                TRUE BirdLife International Butchart, S. &amp; Symes, A.
+## 7                TRUE BirdLife International              Westrip, J.
+## 8                TRUE BirdLife International              Westrip, J.
+## 9                TRUE BirdLife International              Westrip, J.
+## 10               TRUE BirdLife International               Hermes, C.</code></pre>
+</div>
+<div id="tasks-ii" class="section level2">
+<h2><span class="header-section-number">2.2</span> Tasks II</h2>
+<p>Now, I would like you to work with the red list status table a bit more:</p>
+<div class="alert alert-info">
+<p><strong>Task 3:</strong></p>
+<p>Analyse IUCN population trends and distributional changes from Task I:</p>
+<ul>
+<li>Relate population trend to range sizes (extent of occurrence, EOO) - using the red list status information</li>
+<li>Compare red list population trends to the atlas distribution changes 1970-2010 (from Task I)</li>
+</ul>
+</div>
+<div class="alert alert-info">
+<p><strong>Task 4:</strong></p>
+<p>Map species richness for different red list categories:</p>
+<ul>
+<li>Map species richness of species of one threatened category (CR, EN, VU) and of species one non-threatened category (NT, LC)</li>
+</ul>
+</div>
+</div>
+<div id="red-list-threats" class="section level2">
+<h2><span class="header-section-number">2.3</span> Red list threats</h2>
+<p>The IUCN also assesses the main threats per species as you saw in the <a href="https://www.iucnredlist.org/species/22728432/132658315#conservation-actions">Balearic Shearwater</a> example. The Threat Classification Scheme can be found <a href="https://www.iucnredlist.org/resources/threat-classification-scheme">here</a>.</p>
+<p>If you have your own IUCN API key, you can easily download the information on species’ red list threats:</p>
+<pre class="r"><code># Download red list threats for single species
+rl_threats(&#39;Gavia stellata&#39;, key= MY_IUCN_REDLIST_KEY)
+
+# Download red list threats for all species
+redlist_threats &lt;- do.call(rbind,lapply(seq_len(length(spp)),FUN=function(i){xi &lt;- rl_threats(spp[i], key= MY_IUCN_REDLIST_KEY); if(length(xi$result)) {data.frame(species=spp[i],speccode=speccodes[i],xi$result) }}))</code></pre>
+<p>Course participants can download the data from moodle and read it in:</p>
+<pre class="r"><code>redlist_threats &lt;- read.table(&#39;data/UK_birds_redlist_threats.csv&#39;, header=T, sep=&#39;,&#39;)</code></pre>
+<p>The threats are ordered hierarchically from broad threat type to very detailed threat, e.g.:</p>
+<ul>
+<li><em>2 Agriculture &amp; aquaculture</em> &gt; <em>2.2 Wood &amp; pulp plantations </em> &gt; <em>2.2.1 Small-holder plantations</em></li>
+<li><em>5 Biological resource use</em> &gt; <em>5.4 Fishing &amp; harvesting aquatic resources</em> &gt; <em>5.4.3 Unintentional effects: subsistence/small scale (species being assessed is not the target)[harvest]</em></li>
+</ul>
+<p>Here is an example of the kind of information in the table. For more details, please have a look at the IUCN website, e.g. the <a href="https://www.iucnredlist.org/species/22728432/132658315#conservation-actions">Balearic Shearwater</a> example, and at the <a href="https://www.iucnredlist.org/resources/threat-classification-scheme">Threat Classification Scheme</a>.</p>
+<pre class="r"><code>redlist_threats[sample(nrow(redlist_threats),10),-c(1:2)]</code></pre>
+<pre><code>##       code                                          title  timing
+## 11   5.4.4 Unintentional effects: (large scale) [harvest] Ongoing
+## 303  8.1.2             Named species (Ondatra zibethicus) Ongoing
+## 1232  11.4                              Storms &amp; flooding Ongoing
+## 740    4.2                        Utility &amp; service lines Ongoing
+## 987    3.3                               Renewable energy Ongoing
+## 342  9.2.1                                     Oil spills Ongoing
+## 1473   5.1         Hunting &amp; trapping terrestrial animals Ongoing
+## 719  5.1.1        Intentional use (species is the target) Ongoing
+## 107    5.4         Fishing &amp; harvesting aquatic resources Ongoing
+## 560    5.1         Hunting &amp; trapping terrestrial animals Ongoing
+##                  scope                         severity            score
+## 11     Minority (&lt;50%)              Negligible declines    Low Impact: 4
+## 303    Minority (&lt;50%)       Slow, Significant Declines    Low Impact: 5
+## 1232   Minority (&lt;50%)                   Rapid Declines Medium Impact: 6
+## 740    Minority (&lt;50%)              Negligible declines             &lt;NA&gt;
+## 987            Unknown                          Unknown          Unknown
+## 342  Majority (50-90%) Causing/Could cause fluctuations Medium Impact: 6
+## 1473   Minority (&lt;50%)              Negligible declines    Low Impact: 4
+## 719    Minority (&lt;50%)       Slow, Significant Declines    Low Impact: 5
+## 107  Majority (50-90%)       Slow, Significant Declines Medium Impact: 6
+## 560    Minority (&lt;50%)              Negligible declines    Low Impact: 4
+##                invasive
+## 11                 &lt;NA&gt;
+## 303  Ondatra zibethicus
+## 1232               &lt;NA&gt;
+## 740                &lt;NA&gt;
+## 987                &lt;NA&gt;
+## 342                &lt;NA&gt;
+## 1473               &lt;NA&gt;
+## 719                &lt;NA&gt;
+## 107                &lt;NA&gt;
+## 560                &lt;NA&gt;</code></pre>
+</div>
+<div id="tasks-iii" class="section level2">
+<h2><span class="header-section-number">2.4</span> Tasks III</h2>
+The last set of tasks deals with the frequency of different threats and the geographic patterns of threats.
+<div class="alert alert-info">
+<p><strong>Task 5:</strong></p>
+<p>Analyse major threat categories:</p>
+<ul>
+<li>What are the five most important threats for the birds sighted in Britain and for the birds breeding in Britain?</li>
+<li>What are the five most important threats for the breeding birds with range declines and the breeding birds with range increases 1970-2010?</li>
+</ul>
+<p>Analyse the timing of threats:</p>
+<ul>
+<li>How many species suffer from current threats and how many species are expected to suffer from threats in the future?</li>
+<li>Which are the five most important threats for the future?</li>
+</ul>
+</div>
+<div class="alert alert-info">
+<p><strong>Task 6:</strong></p>
+<p>Map hotspots of threats:</p>
+<ul>
+<li>Pick two of the most important threat categories and map the species richness of breeding birds for these threats (seperately!)</li>
+<li>Repeat for future threats</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references">
+<div id="ref-Gaston2000a">
+<p>Gaston, Kevin J. 2000. “Global Patterns in Biodiversity.” <em>Nature</em> 405: 220–27. <a href="https://doi.org/10.1038/35012228">https://doi.org/10.1038/35012228</a>.</p>
+</div>
+<div id="ref-Gillings2019">
+<p>Gillings, Simon, Dawn E. Balmer, Brian J. Caffrey, Iain S. Downie, David W. Gibbons, Peter C. Lack, James B. Reid, J. Tim R. Sharrock, Robert L. Swann, and Robert J. Fuller. 2019. “Breeding and Wintering Bird Distributions in Britain and Ireland from Citizen Science Bird Atlases.” <em>Global Ecology and Biogeography</em> 28 (7): 866–74. <a href="https://doi.org/10.1111/geb.12906">https://doi.org/10.1111/geb.12906</a>.</p>
+</div>
+<div id="ref-IUCN2012">
+<p>IUCN. 2012. <em>IUCN Red List Categories and Criteria: Version 3.1.</em> Gland, Switzerland; Cambridge, UK: IUCN.</p>
+</div>
+<div id="ref-IUCN2019">
+<p>———. 2019. <em>The IUCN Red List of Threatened Species. Version 2019-2.</em> http://www.iucnredlist.org. Downloaded on 27 October 2019.</p>
+</div>
+</div>
+</div>
 
 <!DOCTYPE html>
 <html>
@@ -367,6 +715,8 @@ $(document).ready(function () {
 </html>
 
 
+</div>
+</div>
 
 </div>
 
@@ -399,6 +749,32 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
