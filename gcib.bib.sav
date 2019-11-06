@@ -877,7 +877,7 @@ biogeography.},
 }
 
 @Book{IUCN2019,
-  title     = {The IUCN Red List of Threatened Species. Version 2019-2.},
+  title     = {The {IUCN} Red List of Threatened Species. Version 2019-2.},
   publisher = {http://www.iucnredlist.org. Downloaded on 27 October 2019.},
   year      = {2019},
   author    = {IUCN},
