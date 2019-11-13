@@ -20,6 +20,9 @@
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -251,6 +254,63 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -258,6 +318,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -353,7 +423,851 @@ $(document).ready(function () {
 </div>
 
 
+<div id="introduction" class="section level1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p>In sessions 3-4, we have learnt to fit GLMs to species presence-absence data. GLMs are only one, very simple parametric method for fitting SDMs. There are many more algorithms out there <span class="citation">(Elith et al. 2006; Thuiller et al. 2009; Guisan, Thuiller, and Zimmermann 2017)</span>. Here, we will get to know a few of them. Remember the five general model building steps: (i) conceptualisation, (ii) data preparation, (iii) model fitting, (iv) assessment and (v) predictions. These are the same for all SDMs independent of the particular algorithm used.</p>
+<p>For a first overview of potential algorithms have a look at the different response surfaces illustrated below.</p>
+<ul>
+<li>What differences do you see?</li>
+<li>Which models do you find intuitively more trustworthy?</li>
+</ul>
+<p><img src="figures/algorithms.png" width="100%" /></p>
+</div>
+<div id="data" class="section level1">
+<h1><span class="header-section-number">2</span> Data</h1>
+<div id="species-data" class="section level2">
+<h2><span class="header-section-number">2.1</span> Species data</h2>
+<p>Today, we will work with dataset of British breeding and wintering birds that we also used in Practical 2 <span class="citation">(Gillings et al. 2019)</span>. The data contain breeding bird records in 20-year cycles (1968-1972, 1988-1991, 2008-2011 and) wintering bird records in 30-year cycles (1981/1982-1983-1984, 2007/2008-2010/2011) at a 10 km spatial resolution throughout Britain, Ireland, the Isle of Man and the Channel Islands. The data are available through the British Trust of Ornithology (www.bto.org) and can be downloaded <a href="https://www.bto.org/sites/default/files/atlas_open_data_files.zip">here</a>. If you were following the previous practicals, you should have the data on your local machine (e.g. in <em>data</em> folder).</p>
+<pre class="r"><code># Read in UK bird data (you may have to adapt the filepath)
+bird_dist &lt;- read.table(&#39;data/distributions.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
+bird_spp &lt;- read.table(&#39;data/species_lookup.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
+bird_coords &lt;- read.table(&#39;data/grid_square_coordinates_lookup.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
 
+grid_ref &lt;- read.table(&#39;data/UK_10km_gridref.csv&#39;,header=T,sep=&#39;,&#39;)</code></pre>
+<p>We concentrate on the most recent atlas period 2008-2011. As in the last weeks, I chose to work with the Ring Ouzel as example.</p>
+<pre class="r"><code>library(raster)
+
+# Coordinate reference
+proj_UK &lt;- &#39;+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs&#39;
+
+# Define the spatial background of UK
+bg &lt;- subset(bird_dist,period==&quot;2008-11&quot; &amp; resolution==10 &amp; island==&#39;B&#39;)[,c(4:6)]
+bg &lt;- bg[!duplicated(bg$grid),]
+bg &lt;- merge(bg, grid_ref)[,4:5]
+bg$val &lt;- 1
+bg &lt;- rasterFromXYZ(bg, crs=proj_UK)
+
+# Extract ring ouzel presence data - first, we use data with any possible status information
+sp_dat &lt;- subset(bird_dist,speccode==370 &amp; period==&quot;2008-11&quot; &amp; resolution==10 &amp; island==&#39;B&#39;)
+sp_dat &lt;- merge(sp_dat, grid_ref)[,c(&#39;grid&#39;,&#39;EASTING&#39;,&#39;NORTHING&#39;)]
+sp_dat$Turdus_torquatus &lt;- 1
+
+# We extract a second data set with only confirmed breeding occurrences
+sp_breed &lt;- subset(bird_dist,speccode==370 &amp; period==&quot;2008-11&quot; &amp; status==&#39;Confirmed&#39; &amp; resolution==10 &amp; island==&#39;B&#39;)
+sp_breed &lt;- merge(sp_breed, grid_ref)[,c(&#39;grid&#39;,&#39;EASTING&#39;,&#39;NORTHING&#39;)]
+sp_breed$Turdus_torquatus &lt;- 1
+
+# Plot ring ouzel presences
+par(mfrow=c(1,2))
+plot(bg,col=&#39;grey&#39;,axes=F,legend=F, main=&#39;All records&#39;)
+plot(extend(rasterFromXYZ(sp_dat[,-1]),bg), col=&#39;red&#39;, legend=F,add=T)
+plot(bg,col=&#39;grey&#39;,axes=F,legend=F, main=&#39;Confirmed breeding&#39;)
+plot(extend(rasterFromXYZ(sp_breed[,-1]),bg), col=&#39;red&#39;, legend=F,add=T)</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>The distribution data cover the entire British Isles. Using adjacent cells in model building can lead to problems with spatial autocorrelation. We thus thin the records using the package <code>spThin</code> <span class="citation">(Aiello-Lammens et al. 2015)</span>.</p>
+<pre class="r"><code>library(spThin)
+
+# The spThin package require longitude/latitude coordinates:
+sp_temp &lt;- merge(sp_breed, subset(bird_coords,order==1&amp;resolution==10))
+
+# Remove adjacent cells:
+xy &lt;- thin(sp_temp, lat.col=&#39;lat&#39;,long.col=&#39;long&#39;,spec.col=&#39;Turdus_torquatus&#39;, thin.par=20,reps=5, write.files=F,locs.thinned.list.return=T)</code></pre>
+<pre><code>## ********************************************** 
+##  Beginning Spatial Thinning.
+##  Script Started at: Wed Nov 13 20:24:34 2019
+## lat.long.thin.count
+## 73 74 75 
+##  1  1  3 
+## [1] &quot;Maximum number of records after thinning: 75&quot;
+## [1] &quot;Number of data.frames with max records: 3&quot;
+## [1] &quot;No files written for this run.&quot;</code></pre>
+<pre class="r"><code># Which run yields the most presence records?
+which.max(sapply(xy,nrow))</code></pre>
+<pre><code>## [1] 2</code></pre>
+<pre class="r"><code># Thin the dataset:
+sp_thinned &lt;- merge(sp_temp,data.frame(long=xy[[which.max(sapply(xy,nrow))]]$Longitude, lat=xy[[which.max(sapply(xy,nrow))]]$Latitude),by=c(&#39;long&#39;,&#39;lat&#39;))[,c(&#39;grid&#39;,&#39;EASTING&#39;,&#39;NORTHING&#39;,&#39;Turdus_torquatus&#39;)]
+
+# Plot atlas and thinned ring ouzel presences
+par(mfrow=c(1,2))
+plot(bg,col=&#39;grey&#39;,main=&#39;breeding&#39;, legend=F)
+plot(extend(rasterFromXYZ(sp_breed[,-1]),bg), col=&#39;red&#39;, legend=F, add=T)
+plot(bg,col=&#39;grey&#39;,main=&#39;thinned&#39;, legend=F)
+plot(extend(rasterFromXYZ(sp_thinned[,-1]),bg), col=&#39;red&#39;, legend=F, add=T)</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<pre class="r"><code># We can remove the temporary data:
+rm(sp_temp)</code></pre>
+<p>Now, we still need absence data. As the observers made a huge effort for identifying the species, we can safely assume that all cells without Ring Ouzel occurrences are absences. However, as indicated earlier we want to avoid using adjacent cells. Thus, we also thin the absence data.</p>
+<pre class="r"><code>abs_temp &lt;- data.frame(grid=unique(subset(bird_dist,period==&quot;2008-11&quot; &amp; resolution==10 &amp; island==&#39;B&#39;)$grid),Turdus_torquatus=0)
+abs_temp &lt;- subset(abs_temp, ! grid %in% unique(sp_dat$grid))
+abs_temp &lt;- merge(abs_temp, subset(bird_coords,order==1))
+
+# Remove adjacent cells - this time we take a random set of thinned points
+xy &lt;- thin(abs_temp, lat.col=&#39;lat&#39;,long.col=&#39;long&#39;,spec.col=&#39;Turdus_torquatus&#39;, thin.par=20,reps=1, write.files=F,locs.thinned.list.return=T)[[1]]</code></pre>
+<pre><code>## ********************************************** 
+##  Beginning Spatial Thinning.
+##  Script Started at: Wed Nov 13 20:24:36 2019
+## lat.long.thin.count
+## 507 
+##   1 
+## [1] &quot;Maximum number of records after thinning: 507&quot;
+## [1] &quot;Number of data.frames with max records: 1&quot;
+## [1] &quot;No files written for this run.&quot;</code></pre>
+<pre class="r"><code># Thin the dataset:
+abs_thinned &lt;- merge(abs_temp,data.frame(long=xy$Longitude, lat=xy$Latitude),by=c(&#39;long&#39;,&#39;lat&#39;))
+# Combine with National Grid coordinates
+abs_thinned &lt;- merge(abs_thinned,grid_ref)[,c(&#39;EASTING&#39;,&#39;NORTHING&#39;,&#39;Turdus_torquatus&#39;)]
+
+sp_thinned &lt;- rbind(sp_thinned[,-1],abs_thinned)
+
+# Remove temporary data
+rm(abs_temp,abs_thinned)
+
+plot(bg,col=&#39;grey&#39;,axes=F,legend=F, main=&#39;Confirmed breeding&#39;)
+plot(extend(rasterFromXYZ(sp_thinned),bg), col=c(&#39;red&#39;,&#39;black&#39;), legend=F,add=T)</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>As preparing the data was quite an effort, we better save the object for later use.</p>
+<pre class="r"><code>save(sp_thinned,file=&#39;UK_RingOuzel_thinned.RData&#39;)</code></pre>
+</div>
+<div id="climate-data" class="section level2">
+<h2><span class="header-section-number">2.2</span> Climate data</h2>
+<pre class="r"><code># Please note that you have to set download=T if you haven&#39;t downloaded the data before:
+bio_curr &lt;- getData(&#39;worldclim&#39;, var=&#39;bio&#39;, download=F, lon=-5, lat=55, res=5, path=my_filepath)
+
+# UK extent in lon/lat coordinates
+ch_uk &lt;- c(-12, 3, 48, 62)
+
+# Crop and reproject current climate
+bio_curr &lt;- crop(bio_curr, ch_uk)
+bio_curr &lt;- projectRaster(bio_curr, bg)
+bio_curr &lt;- resample(bio_curr, bg)
+bio_curr &lt;- mask(bio_curr, bg)</code></pre>
+</div>
+<div id="join-species-and-climate-data" class="section level2">
+<h2><span class="header-section-number">2.3</span> Join species and climate data</h2>
+<pre class="r"><code>sp_thinned &lt;- na.exclude(data.frame(sp_thinned,extract(bio_curr,sp_thinned[,1:2])))</code></pre>
+</div>
+</div>
+<div id="variable-selection" class="section level1">
+<h1><span class="header-section-number">3</span> Variable selection</h1>
+<p>As in prac 3, we should take a look at correlation structure between predictor variables as collinearity could be potentially problematic for some of our model algorithms. We will rank the predictors according to their univariate variable importance using the <code>select07()</code> function from <span class="citation">Dormann et al. (2013)</span>. To do so, please source the function <code>select07()</code> function from prac 3.</p>
+<pre class="r"><code>library(corrplot)
+
+# We remove strongly correlated variables, keeping those with highest univariate importance:
+pred_names &lt;- names(bio_curr)
+
+# Look at correlations:
+cor_mat &lt;- cor(sp_thinned[,pred_names], method=&#39;spearman&#39;)
+
+# Visualise the correlation matrix. For better visibility, we plot the correlation coefficients as percentages.
+corrplot.mixed(cor_mat, tl.pos=&#39;lt&#39;, tl.cex=0.6, number.cex=0.5, addCoefasPercent=T)</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<pre class="r"><code>var_sel &lt;- select07(pred_names=pred_names, response_name=&#39;Turdus_torquatus&#39;, data=sp_thinned, cor_mat=cor_mat, threshold = 0.5)
+
+# For today&#39;s session, we will only consider the two most important, weakly correlated variables
+my_preds &lt;- var_sel$pred_sel[1:2]</code></pre>
+</div>
+<div id="model-algorithms" class="section level1">
+<h1><span class="header-section-number">4</span> Model algorithms</h1>
+<p>You will remember from the last sessions that we should decide on appropriate modelling algorithms during the conceptualisation phase. Let’s assume our study objectives were to compare species-environment relationships and predicted species distributions across several SDM algorithms, for example to quantify the uncertainty due to the model class <span class="citation">(Araujo and New 2007; Thuiller et al. 2009; Buisson et al. 2010)</span>. We will test several different SDM algorithms that can be broadly classified into profile (envelope and distance-based) methods, regression-based methods and non-parametric machine-learning methods <span class="citation">(Guisan, Thuiller, and Zimmermann 2017)</span>(<a href="http://rspatial.org/sdm/rst/6_sdm_methods.html" class="uri">http://rspatial.org/sdm/rst/6_sdm_methods.html</a>). The list of models we treat here is not exhaustive but should give you a rough overview of what concepts and methods are out there. Most of the methods used here are available in the package <code>dismo</code>.</p>
+<div id="profile-envelope-and-distance-based-methods" class="section level2">
+<h2><span class="header-section-number">4.1</span> Profile (envelope and distance-based) methods</h2>
+<p>Profile methods constitute the oldest family of SDM algorithms and are the only “true” presence-only methods that do not need any absence or background data. We can distinguish the classical envelope approach and distance-based methods.</p>
+<div id="bioclim" class="section level3">
+<h3><span class="header-section-number">4.1.1</span> BIOCLIM</h3>
+<p>You have already met an envelope method: The IUCN range maps are derived by drawing the shortest geographic boundary, a convex hull, around all presence points in space. This is defined as the “extent of occurrence” and is a geographic envelope. Environmental envelopes work in a very similar way, only that we need to define “ecologically sensible” niche axes (environmental predictor variables) before and can then draw a convex hull around all species’ presence points in this environmental space. BIOCLIM is a pioneering envelope approach <span class="citation">(Booth et al. 2014)</span>. It defines the niche as an <em>n</em>-dimensional, rectangular bounding box, which is of course similar to Hutchinson’s view of the <em>n</em>-dimensional hyperspace <span class="citation">(Hutchinson 1957)</span>. To reduce sensitivity to outliers, the bounding box can be limited by only considering a certain percentile range (e.g. 5-95%) of the species records along each environmental gradient. In <code>dismo</code>, the BIOCLIM algorithm is implemented such that it will produce continuous probabilities between 0 and 1, indicating how similar/close the environmental conditions are to the median conditions.</p>
+<pre class="r"><code>library(dismo)
+
+# Fit BIOCLIM model
+m_bc &lt;- bioclim(bio_curr[[my_preds]], sp_thinned[sp_thinned$Turdus_torquatus==1,c(&#39;EASTING&#39;,&#39;NORTHING&#39;)])
+plot(m_bc)</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre class="r"><code># Now, we plot the response surface:
+xyz &lt;- expand.grid(
+    seq(min(sp_thinned[,my_preds[1]]),max(sp_thinned[,my_preds[1]]),length=50),
+    seq(min(sp_thinned[,my_preds[2]]),max(sp_thinned[,my_preds[2]]),length=50))
+names(xyz) &lt;- my_preds
+xyz$z &lt;- predict(m_bc, xyz)
+
+library(RColorBrewer)
+cls &lt;- colorRampPalette(rev(brewer.pal(11, &#39;RdYlBu&#39;)))(100)
+
+library(lattice)
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;BIOCLIM&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
+<pre class="r"><code># Plot response curves:
+par(mfrow=c(1,2)) 
+for (i in 1:2) {
+  xz &lt;- data.frame(
+    # Sequence for one predictor:
+    seq(min(sp_thinned[,my_preds[i]]),max(sp_thinned[,my_preds[i]]),length=50),
+    # Calculate the mean of the other predictor:
+      mean(sp_thinned[,my_preds[ ((i)%%2)+1 ]]) 
+    )
+    names(xz) &lt;- c(my_preds[i], my_preds[-i])
+    xz$z &lt;- predict(m_bc, xz)
+    plot(xz[,1],xz$z,type=&#39;l&#39;, xlab=my_preds[i], ylim=c(0,1),ylab=&#39;Occurrence probability&#39;, main=&#39;BIOCLIM&#39;)
+    }</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-12-3.png" width="672" /></p>
+<p>For simplicity, we only use internal validation today, meaning that we evaluate model performance on the training data.</p>
+<pre class="r"><code>library(PresenceAbsence)
+
+# We define some useful functions for evaluation:
+# True Skill Statistic
+TSS = function(cmx){
+    require(PresenceAbsence)
+    sensitivity(cmx, st.dev=F)+specificity(cmx, st.dev=F)-1
+    }
+
+# Calculate explained deviance: null prediction is equivalent to the mean prevalence
+d.square &lt;- function(obs, pred, family=&#39;binomial&#39;){
+    require(dismo)  
+    if (family==&#39;binomial&#39;) pred &lt;- ifelse(pred&lt;.00001,.00001,ifelse(pred&gt;.9999,.9999,pred))
+    null.pred &lt;- rep(mean(obs), length(obs))
+    1 - (calc.deviance(obs, pred, family=family)/calc.deviance(obs, null.pred, family=family))
+}
+
+
+# We find a threshold and evaluate the model:
+thresh_dat &lt;- data.frame(ID=seq_len(nrow(sp_thinned)), 
+        obs= sp_thinned$Turdus_torquatus,
+        pred=predict(m_bc, sp_thinned[,my_preds]))
+        
+thresh &lt;- optimal.thresholds(DATA= thresh_dat)
+cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
+
+pcc(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7580645</code></pre>
+<pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.84</code></pre>
+<pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7453416</code></pre>
+<pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
+<pre><code>## [1] 0.5853416</code></pre>
+<pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8321049</code></pre>
+<pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
+<pre><code>## [1] 0.1580936</code></pre>
+<p>Finally, let’s map the predicted occurrence probabilities across Britain and the predicted presence/absence.</p>
+<pre class="r"><code># Map predictions:
+r_bc_pred &lt;- r_bc_bin &lt;- predict(m_bc,bio_curr)
+values(r_bc_bin) &lt;- ifelse(values(r_bc_pred)&gt;=thresh[3,2], 1, 0)
+plot(stack(r_bc_pred, r_bc_bin),main=c(&#39;BIOCLIM prob.&#39;,&#39;BIOCLIM bin.&#39;), axes=F) </code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+</div>
+<div id="domain" class="section level3">
+<h3><span class="header-section-number">4.1.2</span> Domain</h3>
+<p>Instead of drawing rectangular envelopes, distance-based methods such as the <em>Domain</em> evaluate the environmental similarity between a “new” site and sites with known presences. <em>Domain</em> uses the Gower distance for assessing similarity.</p>
+<pre class="r"><code># Fit Domain model
+m_dom &lt;- domain(bio_curr[[my_preds]], sp_thinned[sp_thinned$Turdus_torquatus==1,c(&#39;EASTING&#39;,&#39;NORTHING&#39;)])
+
+# Now, we plot the response surface:
+xyz$z &lt;- predict(m_dom, xyz)
+
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Domain&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code># Plot response curves:
+par(mfrow=c(1,2)) 
+for (i in 1:2) {
+  xz &lt;- data.frame(
+    # Sequence for one predictor:
+    seq(min(sp_thinned[,my_preds[i]]),max(sp_thinned[,my_preds[i]]),length=50),
+    # Calculate the mean of the other predictor:
+      mean(sp_thinned[,my_preds[ ((i)%%2)+1 ]]) 
+    )
+    names(xz) &lt;- c(my_preds[i], my_preds[-i])
+    xz$z &lt;- predict(m_dom, xz)
+    plot(xz[,1],xz$z,type=&#39;l&#39;, xlab=my_preds[i], ylim=c(0,1),ylab=&#39;Occurrence probability&#39;, main=&#39;Domain&#39;)
+    }</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-15-2.png" width="672" /></p>
+<pre class="r"><code># We find a threshold and evaluate the model:
+thresh_dat &lt;- data.frame(ID=seq_len(nrow(sp_thinned)), 
+        obs= sp_thinned$Turdus_torquatus,
+        pred=predict(m_dom, sp_thinned[,my_preds]))
+        
+thresh &lt;- optimal.thresholds(DATA= thresh_dat)
+cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
+
+pcc(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7455197</code></pre>
+<pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7333333</code></pre>
+<pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.747412</code></pre>
+<pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
+<pre><code>## [1] 0.4807453</code></pre>
+<pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7860594</code></pre>
+<pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
+<pre><code>## [1] -1.003855</code></pre>
+<pre class="r"><code># Map predictions:
+r_dom_pred &lt;- r_dom_bin &lt;- predict(m_dom,bio_curr[[my_preds]])
+values(r_dom_bin) &lt;- ifelse(values(r_dom_pred)&gt;=thresh[3,2], 1, 0)
+plot(stack(r_dom_pred, r_dom_bin),main=c(&#39;Domain prob.&#39;,&#39;Domain bin.&#39;), axes=F) </code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-15-3.png" width="672" /></p>
+</div>
+</div>
+<div id="regression-based-methods" class="section level2">
+<h2><span class="header-section-number">4.2</span> Regression-based methods</h2>
+<div id="generalised-linear-models-glms" class="section level3">
+<h3><span class="header-section-number">4.2.1</span> Generalised linear models (GLMs)</h3>
+<p>We already know GLMs from pracs 3-4. We can fit linear, quadratic or higher polynomial terms (check <code>poly()</code>) and interactions between predictors.</p>
+<pre class="r"><code># Fit GLM
+m_glm &lt;- step(glm( as.formula(
+        paste(&#39;Turdus_torquatus ~&#39;,paste(my_preds,paste0(&#39;+ I(&#39;,my_preds,&#39;^2)&#39;),collapse=&#39; + &#39;))),
+    family=&#39;binomial&#39;, data=sp_thinned))</code></pre>
+<pre><code>## Start:  AIC=293.97
+## Turdus_torquatus ~ bio11 + I(bio11^2) + bio17 + I(bio17^2)
+## 
+##              Df Deviance    AIC
+## - I(bio11^2)  1   285.18 293.18
+## &lt;none&gt;            283.97 293.97
+## - bio11       1   287.08 295.08
+## - I(bio17^2)  1   295.47 303.47
+## - bio17       1   298.40 306.40
+## 
+## Step:  AIC=293.18
+## Turdus_torquatus ~ bio11 + bio17 + I(bio17^2)
+## 
+##              Df Deviance    AIC
+## &lt;none&gt;            285.18 293.18
+## - I(bio17^2)  1   297.20 303.20
+## - bio17       1   300.36 306.36
+## - bio11       1   349.68 355.68</code></pre>
+<pre class="r"><code>summary(m_glm)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = Turdus_torquatus ~ bio11 + bio17 + I(bio17^2), 
+##     family = &quot;binomial&quot;, data = sp_thinned)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.9563  -0.4205  -0.1979  -0.1002   2.8088  
+## 
+## Coefficients:
+##               Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -1.284e+01  3.671e+00  -3.497 0.000470 ***
+## bio11       -9.533e-02  1.358e-02  -7.023 2.18e-12 ***
+## bio17        1.139e-01  3.235e-02   3.520 0.000432 ***
+## I(bio17^2)  -2.258e-04  7.047e-05  -3.205 0.001352 ** 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 440.47  on 557  degrees of freedom
+## Residual deviance: 285.18  on 554  degrees of freedom
+## AIC: 293.18
+## 
+## Number of Fisher Scoring iterations: 7</code></pre>
+<pre class="r"><code># Now, we plot the response surface:
+xyz$z &lt;- predict(m_glm, xyz, type=&#39;response&#39;)
+
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;GLM&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<pre class="r"><code># Plot response curves:
+par(mfrow=c(1,2)) 
+for (i in 1:2) {
+  xz &lt;- data.frame(
+    # Sequence for one predictor:
+    seq(min(sp_thinned[,my_preds[i]]),max(sp_thinned[,my_preds[i]]),length=50),
+    # Calculate the mean of the other predictor:
+      mean(sp_thinned[,my_preds[ ((i)%%2)+1 ]]) 
+    )
+    names(xz) &lt;- c(my_preds[i], my_preds[-i])
+    xz$z &lt;- predict(m_glm, xz, type=&#39;response&#39;)
+    plot(xz[,1],xz$z,type=&#39;l&#39;, xlab=my_preds[i], ylim=c(0,1),ylab=&#39;Occurrence probability&#39;, main=&#39;GLM&#39;)
+    }</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-16-2.png" width="672" /></p>
+<pre class="r"><code># We find a threshold and evaluate the model:
+thresh_dat &lt;- data.frame(ID=seq_len(nrow(sp_thinned)), 
+        obs= sp_thinned$Turdus_torquatus,
+        pred=predict(m_glm, sp_thinned[,my_preds], type=&#39;response&#39;))
+        
+thresh &lt;- optimal.thresholds(DATA= thresh_dat)
+cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
+
+pcc(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7867384</code></pre>
+<pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8933333</code></pre>
+<pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7701863</code></pre>
+<pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
+<pre><code>## [1] 0.6635197</code></pre>
+<pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8983299</code></pre>
+<pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
+<pre><code>## [1] 0.3525447</code></pre>
+<pre class="r"><code># Map predictions:
+UK_dat &lt;- data.frame(rasterToPoints(bio_curr[[my_preds]]))
+r_glm_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict(m_glm, UK_dat, type=&#39;response&#39;)))
+r_glm_bin &lt;- r_glm_pred
+values(r_glm_bin) &lt;- ifelse(values(r_glm_pred)&gt;=thresh[3,2], 1, 0)
+plot(stack(r_glm_pred, r_glm_bin),main=c(&#39;GLM prob.&#39;,&#39;GLM bin.&#39;), axes=F)   </code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-16-3.png" width="672" /></p>
+</div>
+<div id="generalised-additive-models-gams" class="section level3">
+<h3><span class="header-section-number">4.2.2</span> Generalised additive models (GAMs)</h3>
+<p>GAMs are a semi-parametric regression method that use data-defined, non-parametric smoothing functions to fit non-linear species-environment relationships. GAMs do not fit the response function to all data points at once, but use a moving-window approach to fit a local smoother to a proportion of the data. Small window sizes will yield highly flexible response shapes while large window sizes will produce less flexible response shapes that are closer to a parametric GLM. Two packages for fitting GAMs are available in R: <em>mgcv</em> and <em>gam</em>. Both allow fitting spline smoother <code>s()</code> while the package <em>gam</em> also allows fitting loess function <code>lo()</code>. The <em>mgcv</em> package allows more control over model fitting and optimization, but here we use the package <em>gam</em> to illustrate differences between loess and splines.</p>
+<pre class="r"><code>library(gam)
+
+# Fit GAM with different degrees of freedom
+m_gamS &lt;- gam( as.formula(
+        paste(&#39;Turdus_torquatus ~&#39;,paste(paste0(&#39;s(&#39;,my_preds,&#39;,df=4)&#39;),collapse=&#39; + &#39;))),
+    family=&#39;binomial&#39;, data=sp_thinned)
+m_gamL &lt;- gam( as.formula(
+        paste(&#39;Turdus_torquatus ~&#39;,paste(paste0(&#39;lo(&#39;,my_preds,&#39;)&#39;),collapse=&#39; + &#39;))),
+    family=&#39;binomial&#39;, data=sp_thinned)
+
+
+# Now, we plot the response surface:
+xyz$z &lt;- predict(m_gamS, xyz[,1:2], type=&#39;response&#39;)
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;GAM (splines)&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<pre class="r"><code>xyz$z &lt;- predict(m_gamL, xyz[,1:2], type=&#39;response&#39;)
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;GAM (loess)&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-17-2.png" width="672" /></p>
+<pre class="r"><code># Plot response curves:
+par(mfrow=c(1,2)) 
+for (i in 1:2) {
+  xz &lt;- data.frame(
+    # Sequence for one predictor:
+    seq(min(sp_thinned[,my_preds[i]]),max(sp_thinned[,my_preds[i]]),length=50),
+    # Calculate the mean of the other predictor:
+      mean(sp_thinned[,my_preds[ ((i)%%2)+1 ]]) 
+    )
+    names(xz) &lt;- c(my_preds[i], my_preds[-i])
+    xz$z &lt;- predict(m_gamS, newdata=xz, type=&#39;response&#39;)
+    plot(xz[,1],xz$z,type=&#39;l&#39;, xlab=my_preds[i], 
+        ylab=&#39;Occurrence probability&#39;,ylim=c(0,1), main=&#39;GAM&#39;)
+    xz$z &lt;- predict(m_gamL, newdata=xz, type=&#39;response&#39;)
+    lines(xz[,1],xz$z,col=&#39;red&#39;)
+    legend(&#39;topleft&#39;,legend=c(&#39;spline&#39;,&#39;loess&#39;),lty=&#39;solid&#39;,col=c(&#39;black&#39;,&#39;red&#39;),bty=&#39;n&#39;)
+    }</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-17-3.png" width="672" /></p>
+<pre class="r"><code># We find a threshold and evaluate the model:
+thresh_dat &lt;- data.frame(ID=seq_len(nrow(sp_thinned)), 
+        obs= sp_thinned$Turdus_torquatus,
+        pred=predict(m_gamS, sp_thinned[,my_preds], type=&#39;response&#39;))
+        
+thresh &lt;- optimal.thresholds(DATA= thresh_dat)
+cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
+
+pcc(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8010753</code></pre>
+<pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8933333</code></pre>
+<pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7867495</code></pre>
+<pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
+<pre><code>## [1] 0.6800828</code></pre>
+<pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
+<pre><code>## [1] 0.9020842</code></pre>
+<pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
+<pre><code>## [1] 0.3748025</code></pre>
+<pre class="r"><code># Map predictions:
+r_gamS_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict(m_gamS, UK_dat, type=&#39;response&#39;)))
+r_gamS_bin &lt;- r_gamS_pred
+values(r_gamS_bin) &lt;- ifelse(values(r_gamS_pred)&gt;=thresh[3,2], 1, 0)
+plot(stack(r_gamS_pred, r_gamS_bin),main=c(&#39;GAM (splines) prob.&#39;,&#39;GAM (splines) bin.&#39;), axes=F) </code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-17-4.png" width="672" /></p>
+<div class="alert alert-info">
+<p><strong>Tasks:</strong></p>
+<ul>
+<li>Compute the evaluation statistics and map the predictions for the gam fitted with loess smoother.</li>
+<li>Fit GAMs with more flexible smoothing splines (allowing higher degree of freedoms <code>df</code>) and smaller windows sizes for the loess smoother (smaller <code>span</code> will lead to higher flexibility).</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="machine-learning-methods" class="section level2">
+<h2><span class="header-section-number">4.3</span> Machine-learning methods</h2>
+<p>There are a number of different non-parametric machine-learning methods that are commonly used in SDMs, and new methods are constantly appearing. A few methods like Classification and Regression Trees (CART) and Artificial Neural Networks (ANN) have been around for some time, while other methods such as Boosted Regression Trees (BRTs), Random Forests (RFs) and Maximum Entropy (MaxEnt) have only become popular over the last decade.</p>
+<div id="classification-and-regression-trees-cart" class="section level3">
+<h3><span class="header-section-number">4.3.1</span> Classification and regression trees (CART)</h3>
+<p>CARTs are a recursive partitioning method that aim to divide the data into homogeneous subgroups <span class="citation">(Franklin 2010; Guisan, Thuiller, and Zimmermann 2017)</span>. They grow a decision tree by repeatedly splitting the data such that the splits help separating presences and absences. Thus, CARTs search along each environmental gradient for those splitting rules (nodes) that best separate the observations. Of course, we could perfectly fit all data by that procedure, which is rarely desirable as it will decrease the bias for the training data but increase the variance for a different sample (the <em>bias-variance tradeoff</em>). Thus, the procedure is basically to grow the tree, stop the tree and prune the tree to find the optimal tree size.</p>
+<p>Again, different packages are available for fitting CARTs, e.g. <em>rpart</em> and <em>tree</em>. The package <em>rpart</em> offers better control of model fitting and tree size optimization. It uses internal cross-validation (default <code>xval=10</code>) for evaluating bias-variance tradeoff and optimizing tree size. Another important control parameter is the minimum number of observations (default <code>minsplit=20</code>) that must be available to define a split.</p>
+<pre class="r"><code>library(rpart)
+
+# Fit CART
+m_cart &lt;- rpart( as.formula(
+        paste(&#39;Turdus_torquatus ~&#39;,paste(my_preds,collapse=&#39; + &#39;))),
+    data=sp_thinned, control=rpart.control(minsplit=20,xval=10))
+    
+# Have a look at the data splits:
+print(m_cart)</code></pre>
+<pre><code>## n= 558 
+## 
+## node), split, n, deviance, yval
+##       * denotes terminal node
+## 
+##  1) root 558 64.919350 0.13440860  
+##    2) bio11&gt;=21.68191 449 21.821830 0.05122494  
+##      4) bio17&lt; 190.4548 319  3.949843 0.01253918 *
+##      5) bio17&gt;=190.4548 130 16.223080 0.14615380  
+##       10) bio11&gt;=34.28561 59  1.932203 0.03389831 *
+##       11) bio11&lt; 34.28561 71 12.929580 0.23943660 *
+##    3) bio11&lt; 21.68191 109 27.192660 0.47706420  
+##      6) bio11&gt;=-0.5340128 99 24.323230 0.43434340  
+##       12) bio17&lt; 173.5085 10  0.900000 0.10000000 *
+##       13) bio17&gt;=173.5085 89 22.179780 0.47191010  
+##         26) bio11&gt;=12.96999 54 12.833330 0.38888890  
+##           52) bio11&lt; 20.78256 47 10.553190 0.34042550 *
+##           53) bio11&gt;=20.78256 7  1.428571 0.71428570 *
+##         27) bio11&lt; 12.96999 35  8.400000 0.60000000 *
+##      7) bio11&lt; -0.5340128 10  0.900000 0.90000000 *</code></pre>
+<pre class="r"><code>plot(m_cart, margin=0.1)
+text(m_cart, cex = 0.8)</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<pre class="r"><code># Now, we plot the response surface:
+xyz$z &lt;- predict(m_cart, xyz)
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;CART&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-18-2.png" width="672" /></p>
+<pre class="r"><code># Plot response curves:
+par(mfrow=c(1,2)) 
+for (i in 1:2) {
+  xz &lt;- data.frame(
+    # Sequence for one predictor:
+    seq(min(sp_thinned[,my_preds[i]]),max(sp_thinned[,my_preds[i]]),length=50),
+    # Calculate the mean of the other predictor:
+      mean(sp_thinned[,my_preds[ ((i)%%2)+1 ]]) 
+    )
+    names(xz) &lt;- c(my_preds[i], my_preds[-i])
+    xz$z &lt;- predict(m_cart, newdata=xz)
+    plot(xz[,1],xz$z,type=&#39;l&#39;, xlab=my_preds[i], ylim=c(0,1),ylab=&#39;Occurrence probability&#39;, main=&#39;CART&#39;)
+    }</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-18-3.png" width="672" /></p>
+<pre class="r"><code># We find a threshold and evaluate the model:
+thresh_dat &lt;- data.frame(ID=seq_len(nrow(sp_thinned)), 
+        obs= sp_thinned$Turdus_torquatus,
+        pred=predict(m_cart, sp_thinned[,my_preds]))
+        
+thresh &lt;- optimal.thresholds(DATA= thresh_dat)
+cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
+
+pcc(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8046595</code></pre>
+<pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.9066667</code></pre>
+<pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7888199</code></pre>
+<pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
+<pre><code>## [1] 0.6954865</code></pre>
+<pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8976674</code></pre>
+<pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
+<pre><code>## [1] 0.3929498</code></pre>
+<pre class="r"><code># Map predictions:
+r_cart_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict(m_cart, UK_dat)))
+r_cart_bin &lt;- r_cart_pred
+values(r_cart_bin) &lt;- ifelse(values(r_cart_pred)&gt;=thresh[3,2], 1, 0)
+plot(stack(r_cart_pred, r_cart_bin),main=c(&#39;CART prob.&#39;,&#39;CART bin.&#39;), axes=F)   </code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-18-4.png" width="672" /></p>
+<div class="alert alert-info">
+<p><strong>Tasks:</strong></p>
+<ul>
+<li>Try playing around with the control parameters in <code>rpart</code> and see how that affects the size of the tree and the response surface.</li>
+</ul>
+</div>
+</div>
+<div id="random-forests-rfs" class="section level3">
+<h3><span class="header-section-number">4.3.2</span> Random Forests (RFs)</h3>
+<p>Regression models or classification models can be affected by local optima and noise in the data. They usually have low bias (fit the training data very well) but high variance (noisy/poorer performance when predicting to non-training data). Model averaging has been proposed as possible solution <span class="citation">(Hastie, Tibshirani, and Friedman 2009)</span>. In recent years, so-called bagging and boosting methods have been developed for combining or averaging different models. Random Forests use a bagging procedure for averaging the outputs of a multitude of different CARTs. Bagging stands for “bootstrap aggregation”. Basically, we fit many CARTs to bootstrapped samples of the training data and then either average the results in case of regression trees or make a simple vote in case of classification trees (committee averaging)<span class="citation">(Hastie, Tibshirani, and Friedman 2009; Guisan, Thuiller, and Zimmermann 2017)</span>. An important features of Random Forests are the out-of-bag samples, which means that the predictions/fit for a specific data point is only derived from averaging trees that did not include this data point during tree growing. Thus, the output of Random Forests is essentially cross-validated. Random Forests estimate variable importance by a permutation procedure, which measures for each variable the drop in mean accuracy when this variables is permutated.</p>
+<pre class="r"><code>library(randomForest)
+
+# Fit RF
+m_rf &lt;- randomForest( x=sp_thinned[,my_preds], y=as.factor(sp_thinned$Turdus_torquatus), 
+    ntree=1000, importance =T)
+    
+# Variable importance:
+importance(m_rf,type=1)</code></pre>
+<pre><code>##       MeanDecreaseAccuracy
+## bio11          22.36634206
+## bio17          -0.03964315</code></pre>
+<pre class="r"><code>varImpPlot(m_rf)</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<pre class="r"><code># Look at single trees:
+head(getTree(m_rf,1,T))</code></pre>
+<pre><code>##   left daughter right daughter split var split point status prediction
+## 1             2              3     bio17  189.002919      1       &lt;NA&gt;
+## 2             4              5     bio11   25.686708      1       &lt;NA&gt;
+## 3             6              7     bio11    9.843306      1       &lt;NA&gt;
+## 4             8              9     bio17  173.350757      1       &lt;NA&gt;
+## 5             0              0      &lt;NA&gt;    0.000000     -1          0
+## 6            10             11     bio17  252.326090      1       &lt;NA&gt;</code></pre>
+<pre class="r"><code># Now, we plot the response surface:
+xyz$z &lt;- predict(m_rf, xyz, type=&#39;prob&#39;)[,2]
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Random Forest&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-19-2.png" width="672" /></p>
+<pre class="r"><code># Plot response curves:
+par(mfrow=c(1,2)) 
+for (i in 1:2) {
+  xz &lt;- data.frame(
+    # Sequence for one predictor:
+    seq(min(sp_thinned[,my_preds[i]]),max(sp_thinned[,my_preds[i]]),length=50),
+    # Calculate the mean of the other predictor:
+      mean(sp_thinned[,my_preds[ ((i)%%2)+1 ]]) 
+    )
+    names(xz) &lt;- c(my_preds[i], my_preds[-i])
+    xz$z &lt;- predict(m_rf, newdata=xz, type=&#39;prob&#39;)[,2]
+    plot(xz[,1],xz$z,type=&#39;l&#39;, xlab=my_preds[i], ylim=c(0,1),ylab=&#39;Occurrence probability&#39;, main=&#39;Random Forest&#39;)
+    }</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-19-3.png" width="672" /></p>
+<pre class="r"><code># We find a threshold and evaluate the model:
+thresh_dat &lt;- data.frame(ID=seq_len(nrow(sp_thinned)), 
+        obs= sp_thinned$Turdus_torquatus,
+        pred=predict(m_rf, sp_thinned[,my_preds], type=&#39;prob&#39;)[,2])
+        
+thresh &lt;- optimal.thresholds(DATA= thresh_dat)
+cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
+
+pcc(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
+<pre><code>## [1] 0.8126504</code></pre>
+<pre class="r"><code># Map predictions:
+r_rf_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict(m_rf, UK_dat,type=&#39;prob&#39;)[,2]))
+r_rf_bin &lt;- r_rf_pred
+values(r_rf_bin) &lt;- ifelse(values(r_rf_pred)&gt;=thresh[3,2], 1, 0)
+plot(stack(r_rf_pred, r_rf_bin),main=c(&#39;RF prob.&#39;,&#39;RF bin.&#39;), axes=F)   </code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-19-4.png" width="672" /></p>
+<div class="alert alert-info">
+<p><strong>Tasks:</strong></p>
+<ul>
+<li>Try playing around with the control parameters in <code>randomForest</code>, for example the <code>nodesize</code>.</li>
+</ul>
+</div>
+</div>
+<div id="boosted-regression-trees-brts" class="section level3">
+<h3><span class="header-section-number">4.3.3</span> Boosted regression trees (BRTs)</h3>
+<p>Boosting is another averaging/ensemble approach for improving the predictive performance of models <span class="citation">(Hastie, Tibshirani, and Friedman 2009; Guisan, Thuiller, and Zimmermann 2017)</span>. Boosting of CARTS is known under different names including Gradient Boosting Machine (GBM), Generalised Boosted Regression Model (GBM) and Boosted Regression Trees (BRTs) among others. In R it is available in the package <em>gbm</em> with some additional functions from <span class="citation">Elith, Leathwick, and Hastie (2008)</span> provided in the <em>dismo</em> package. <span class="citation">Elith, Leathwick, and Hastie (2008)</span> also provide a working guide for using BRTs in species distribution modelling. Unlike Random Forests, BRTs iteratively fit relatively simple trees by putting emphasis on observations fitted poorly by the previous trees (by fitting the new tree to the residuals of the previous tree). The final BRT can be though of as linear combination of all trees, similar to a regression model where each term is a single tree <span class="citation">(Elith, Leathwick, and Hastie 2008)</span>. Thereby each tree is shrunk by the learning rate (the shrinkage parameter, typically &lt;1), which determines how much weight is given to single trees. Generally, slower learning (meaning smaller learning rates) are preferable. Similarly to Random Forests, only a subset of the data (the <em>bag fraction</em>) is used for fitting consecutive trees (but in contrast to Random Forests, the subsets are sampled without replacement and thus constitute real data splits). This <em>bag fraction</em> should typically range 0.5-0.75 <span class="citation">(Elith, Leathwick, and Hastie 2008)</span>. The tree complexity controls the interaction depth; <code>1</code> means only tree stumps (with two terminal nodes) are fitted, <code>2</code> means a model with up to two-way interactions etc. In the regular <code>gbm()</code>function, you have to define the maximum number of trees fitted. <span class="citation">Elith, Leathwick, and Hastie (2008)</span> recommend fitting at least 1000 trees. However, you want to be careful not to overfit the model by fitting too many trees. The <em>dismo</em> package provides the function <code>gbm.step</code> that selects the optimum number of trees based on the reduction in deviance achieved by adding a tree while predicting to the hold-out data (1-<code>bag fraction</code>). If the optimal number of trees estimated by the model is below 1000, you should decrease your learning rate; if it is above 10000, you should increase you learning rate. A tutorial on BRTs is contained in the dismo package: <code>vignette('brt')</code></p>
+<pre class="r"><code>library(gbm)
+
+# Fit BRT
+m_brt &lt;- gbm.step(data = sp_thinned, 
+    gbm.x = my_preds,
+    gbm.y = &#39;Turdus_torquatus&#39;, 
+    family = &#39;bernoulli&#39;,
+    tree.complexity = 2,
+    bag.fraction = 0.75,
+    learning.rate = 0.001,
+    verbose=F)</code></pre>
+<pre><code>## 
+##  
+##  GBM STEP - version 2.9 
+##  
+## Performing cross-validation optimisation of a boosted regression tree model 
+## for NA and using a family of bernoulli 
+## Using 558 observations and 2 predictors 
+## creating 10 initial models of 50 trees 
+## 
+##  folds are stratified by prevalence 
+## total mean deviance =  0.7894 
+## tolerance is fixed at  8e-04 
+## now adding trees...</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<pre class="r"><code># Variable importance:
+m_brt$contributions</code></pre>
+<pre><code>##         var  rel.inf
+## bio11 bio11 77.97765
+## bio17 bio17 22.02235</code></pre>
+<pre class="r"><code># Interactions (not very meaningful here with only 2 predictors):
+gbm.interactions(m_brt)$interactions</code></pre>
+<pre><code>##       bio11 bio17
+## bio11     0 50.21
+## bio17     0  0.00</code></pre>
+<pre class="r"><code>gbm.interactions(m_brt)$rank.list</code></pre>
+<pre><code>##   var1.index var1.names var2.index var2.names int.size
+## 1          2      bio17          1      bio11    50.21
+## 2          3       &lt;NA&gt;          0                0.00</code></pre>
+<pre class="r"><code># dismo provides some build-in functions for plotting response:
+gbm.plot(m_brt, n.plots=2, write.title = FALSE)</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-20-2.png" width="672" /></p>
+<pre class="r"><code>gbm.plot.fits(m_brt)</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-20-3.png" width="672" /></p>
+<pre class="r"><code># Now, we plot the response surface:
+xyz$z &lt;- predict.gbm(m_brt, xyz, n.trees=m_brt$gbm.call$best.trees, type=&quot;response&quot;)
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Boosted regression trees&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-20-4.png" width="672" /></p>
+<pre class="r"><code># Plot response curves:
+par(mfrow=c(1,2)) 
+for (i in 1:2) {
+  xz &lt;- data.frame(
+    # Sequence for one predictor:
+    seq(min(sp_thinned[,my_preds[i]]),max(sp_thinned[,my_preds[i]]),length=50),
+    # Calculate the mean of the other predictor:
+      mean(sp_thinned[,my_preds[ ((i)%%2)+1 ]]) 
+    )
+    names(xz) &lt;- c(my_preds[i], my_preds[-i])
+    xz$z &lt;- predict.gbm(m_brt, xz, n.trees=m_brt$gbm.call$best.trees, type=&quot;response&quot;)
+    plot(xz[,1],xz$z,type=&#39;l&#39;, xlab=my_preds[i], ylim=c(0,1),ylab=&#39;Occurrence probability&#39;, main=&#39;Boosted regression tree&#39;)
+    }</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-20-5.png" width="672" /></p>
+<pre class="r"><code># We find a threshold and evaluate the model:
+thresh_dat &lt;- data.frame(ID=seq_len(nrow(sp_thinned)), 
+        obs= sp_thinned$Turdus_torquatus,
+        pred=predict.gbm(m_brt, sp_thinned[,my_preds], n.trees=m_brt$gbm.call$best.trees, type=&quot;response&quot;))
+        
+thresh &lt;- optimal.thresholds(DATA= thresh_dat)
+cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
+
+pcc(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7849462</code></pre>
+<pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.9466667</code></pre>
+<pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7598344</code></pre>
+<pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
+<pre><code>## [1] 0.706501</code></pre>
+<pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
+<pre><code>## [1] 0.915873</code></pre>
+<pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
+<pre><code>## [1] 0.3751883</code></pre>
+<pre class="r"><code># Map predictions:
+r_brt_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict.gbm(m_brt, UK_dat,n.trees=m_brt$gbm.call$best.trees, type=&quot;response&quot;)))
+r_brt_bin &lt;- r_brt_pred
+values(r_brt_bin) &lt;- ifelse(values(r_brt_pred)&gt;=thresh[3,2], 1, 0)
+plot(stack(r_brt_pred, r_brt_bin),main=c(&#39;BRT prob.&#39;,&#39;BRT bin.&#39;), axes=F)   </code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-20-6.png" width="672" /></p>
+</div>
+<div id="maxent" class="section level3">
+<h3><span class="header-section-number">4.3.4</span> Maxent</h3>
+<p>In recent years, maximum entropy modelling of species distributions has become very popular and proved as one of the best-performing methods in model comparisons <span class="citation">Elith et al. (2006)</span>. The implementation <em>Maxent</em> <span class="citation">(Phillips, Anderson, and Schapire 2006; Elith et al. 2011; Merow, Smith, and Silander Jr 2013)</span> now constitutes the most widely used SDM algorithm. It was originally offered with a stand-alone Java package with user interface (possibly one reasons for its popularity). Since a couple of years, some packages like <em>dismo</em> have build-in functions to communicate with this Maxent programme. Very recently, Steven Phillips (“Mr. Maxent”) introduced a true R version of Maxent, the <em>maxnet</em> package.</p>
+<p>Maxent is a presence-only method, but unlike profile methods it uses background data (where presence is unknown) against which it contrasts the observed presences. <span class="citation">Elith et al. (2011)</span> provide a simplified explanation of Maxent (while the original paper by <span class="citation">Phillips, Anderson, and Schapire (2006)</span> focused on explanations from machine-learning perspective) stating that Maxent aims to minimise the relative entropy between the probability density of presences and the probability density of the environment estimated in environmental (not geographic!) space. The density of available background data in environmental/covariate space can be regarded as the null model that assumes that the species will occupy environmental conditions proportional to their relative availability in the landscape <span class="citation">(Guisan, Thuiller, and Zimmermann 2017)</span>. Maxent allows fitting very complex, highly non-linear response shapes <span class="citation">(Merow, Smith, and Silander Jr 2013)</span>, defined by so-called feature classes. Maxent currently recognises six features classes, which are described in more detail by <span class="citation">Elith et al. (2011)</span> and <span class="citation">Merow, Smith, and Silander Jr (2013)</span>: linear, product, quadratic, hinge, threshold and categorical. We already know linear and quadratic features from GLMs. <em>Products</em> allow simple interactions between all possible pair-wise combinations of predictor variables. <em>Thresholds</em> allow a step in the fitted function (as we have seen in CARTs) and make a continuous predictor binary assigning 0 below the threshold and 1 above the threshold. <em>Hinge</em> features are similar to <em>thresholds</em> only that they do not fit abrupt steps but a change in the gradient of the response (a bit like piecewise linear splines). <em>Categorical</em> features split a predictor with <span class="math inline">\(n\)</span> categories (such as land cover) into <span class="math inline">\(n\)</span> binary features assigning 1 when the feature is expressed and 0 otherwise. If the data contain more than 80 presences, then Maxent will by default use all feature classes in model fitting (otherwise it will automatically determine the number of features based on the number of presences). This can easily lead to more features that are explored in the model than actual presences <span class="citation">(Merow, Smith, and Silander Jr 2013)</span>. Of course, users can also specify features themselves. Generally, the selection of features should be guided by ecological plausibility and be considered during model conceptualisation. During model fitting, Maxent will select features based on regularization (trading-off likelihood and model complexity) to avoid overfitting.</p>
+<p>As the density of presence points in environmental space is contrasted against all available environments, choosing the background data can be quite crucial in Maxent and should be guided by the spatial scale of the ecological question <span class="citation">(Merow, Smith, and Silander Jr 2013)</span>. For example, the geographic extent of background data should only encompass areas that are accessible by dispersal and which the species is equally likely to reach. If there is reason to assume that the presence data are spatially biased, then this should also be considered when deriving background data, for example by inducing the same spatial bias in the background <span class="citation">(Kramer-Schadt et al. 2013)</span>.</p>
+<pre class="r"><code>library(maxnet)
+
+# Fit Maxent
+m_maxent &lt;- maxnet(p=sp_thinned$Turdus_torquatus, data=sp_thinned[,my_preds],
+    maxnet.formula(p=sp_thinned$Turdus_torquatus, data=sp_thinned[,my_preds], classes=&quot;lqpht&quot;))
+
+# Now, we plot the response surface:
+xyz$z &lt;- predict(m_maxent, xyz, type=&quot;logistic&quot;)
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Maxent&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<pre class="r"><code># Now, we plot the response surface:
+par(mfrow=c(1,2)) 
+for (i in 1:2) {
+  xz &lt;- data.frame(
+    # Sequence for one predictor:
+    seq(min(sp_thinned[,my_preds[i]]),max(sp_thinned[,my_preds[i]]),length=50),
+    # Calculate the mean of the other predictor:
+      mean(sp_thinned[,my_preds[ ((i)%%2)+1 ]]) 
+    )
+    names(xz) &lt;- c(my_preds[i], my_preds[-i])
+    xz$z &lt;- predict(m_maxent, xz,  type=&quot;logistic&quot;)
+    plot(xz[,1],xz$z,type=&#39;l&#39;, xlab=my_preds[i], ylim=c(0,1),ylab=&#39;Occurrence probability&#39;, main=&#39;Maxent&#39;)
+    }</code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-21-2.png" width="672" /></p>
+<pre class="r"><code># We find a threshold and evaluate the model:
+thresh_dat &lt;- data.frame(ID=seq_len(nrow(sp_thinned)), 
+        obs= sp_thinned$Turdus_torquatus,
+        pred=predict(m_maxent, sp_thinned[,my_preds], type=&quot;logistic&quot;))
+        
+thresh &lt;- optimal.thresholds(DATA= thresh_dat)
+cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
+
+pcc(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8315412</code></pre>
+<pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8533333</code></pre>
+<pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8281573</code></pre>
+<pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
+<pre><code>## [1] 0.6814907</code></pre>
+<pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
+<pre><code>## [1] 0.9023326</code></pre>
+<pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
+<pre><code>## [1] 0.3214855</code></pre>
+<pre class="r"><code># Map predictions:
+r_maxent_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict(m_maxent, UK_dat, type=&quot;logistic&quot;)))
+r_maxent_bin &lt;- r_maxent_pred
+values(r_maxent_bin) &lt;- ifelse(values(r_maxent_pred)&gt;=thresh[3,2], 1, 0)
+plot(stack(r_maxent_pred, r_maxent_bin),main=c(&#39;Maxent prob.&#39;,&#39;Maxent bin.&#39;), axes=F)   </code></pre>
+<p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-21-3.png" width="672" /></p>
+<div class="alert alert-info">
+<p><strong>Tasks:</strong></p>
+<ul>
+<li>Compare response shapes and performance for Maxent model fitted with default settings and other (combinations of) feature classes.</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references">
+<div id="ref-Aiello-Lammens2015">
+<p>Aiello-Lammens, Matthew E., Robert A. Boria, Aleksandar Radosavljevic, Bruno Vilela, and Robert P. Anderson. 2015. “spThin: An R Package for Spatial Thinning of Species Occurrence Records for Use in Ecological Niche Models.” <em>Ecography</em> 38 (5). Wiley: 541–45. <a href="https://doi.org/10.1111/ecog.01132">https://doi.org/10.1111/ecog.01132</a>.</p>
+</div>
+<div id="ref-araujo2007">
+<p>Araujo, Miguel B., and Mark New. 2007. “Ensemble Forecasting of Species Distributions.” <em>Trends in Ecology and Evolution</em> 22: 42–47.</p>
+</div>
+<div id="ref-Booth2014">
+<p>Booth, Trevor H., Henry A. Nix, John R. Busby, and Michael F. Hutchinson. 2014. “Bioclim: The First Species Distribution Modelling Package, Its Early Applications and Relevance to Most Current Maxent Studies.” <em>Diversity and Distributions</em> 20: 1–9.</p>
+</div>
+<div id="ref-BUISSON2010">
+<p>Buisson, Laetitia, Wilfried Thuiller, Nicolas Casajus, Sovan Lek, and Gael Grenouillet. 2010. “Uncertainty in Ensemble Forecasting of Species Distribution.” <em>Global Change Biology</em> 16: 1145–57.</p>
+</div>
+<div id="ref-Dormann2013">
+<p>Dormann, C. F., J. Elith, S. Bacher, C. Buchmann, G. Carl, G. Carre, J. R. Garcia Marquez, et al. 2013. “Collinearity: A Review of Methods to Deal with It and a Simulation Study Evaluating Their Performance.” <em>Ecography</em> 36: 27–46.</p>
+</div>
+<div id="ref-elith2006">
+<p>Elith, J., C. H. Graham, R. P. Anderson, M. Dudik, S. Ferrier, A. Guisan, R. J. Hijmans, et al. 2006. “Novel Methods Improve Prediction of Species’ Distribution from Occurence Data.” <em>Ecography</em> 29: 129–51.</p>
+</div>
+<div id="ref-elith2008">
+<p>Elith, J., J. R. Leathwick, and T. Hastie. 2008. “A Working Guide to Boosted Regression Trees.” <em>Journal of Animal Ecology</em> 77: 802–13.</p>
+</div>
+<div id="ref-Elith2011">
+<p>Elith, J., S. J. Phillips, T. Hastie, M. Dudik, Y. E. Chee, and C. J. Yates. 2011. “A Statistical Explanation of Maxent for Ecologists.” <em>Diversity and Distributions</em> 17: 43–57.</p>
+</div>
+<div id="ref-Franklin2010">
+<p>Franklin, J. 2010. <em>Mapping Species Distributions: Spatial Inference and Prediction</em>. Cambride University Press.</p>
+</div>
+<div id="ref-Gillings2019">
+<p>Gillings, Simon, Dawn E. Balmer, Brian J. Caffrey, Iain S. Downie, David W. Gibbons, Peter C. Lack, James B. Reid, J. Tim R. Sharrock, Robert L. Swann, and Robert J. Fuller. 2019. “Breeding and Wintering Bird Distributions in Britain and Ireland from Citizen Science Bird Atlases.” <em>Global Ecology and Biogeography</em> 28 (7): 866–74. <a href="https://doi.org/10.1111/geb.12906">https://doi.org/10.1111/geb.12906</a>.</p>
+</div>
+<div id="ref-Guisan2017">
+<p>Guisan, A., W. Thuiller, and N. E. Zimmermann. 2017. <em>Habitat Suitability and Distribution Models with Applications in R</em>. Cambride University Press.</p>
+</div>
+<div id="ref-Hastie2009">
+<p>Hastie, T., R. Tibshirani, and J. Friedman. 2009. <em>The Elements of Statistical Learning</em>. Springer.</p>
+</div>
+<div id="ref-hutchinson1957">
+<p>Hutchinson, G. E. 1957. “Concluding Remarks, Cold Spring Harbor Symposium.” <em>Quantitative Biology</em> 22: 415–27.</p>
+</div>
+<div id="ref-Kramer-Schadt2013">
+<p>Kramer-Schadt, Stephanie, Juergen Niedballa, John D. Pilgrim, Boris Schroeder, Jana Lindenborn, Vanessa Reinfelder, Milena Stillfried, et al. 2013. “The Importance of Correcting for Sampling Bias in Maxent Species Distribution Models.” <em>Diversity and Distributions</em> 19: 1366–79.</p>
+</div>
+<div id="ref-Merow2013">
+<p>Merow, C., M. J. Smith, and J. A. Silander Jr. 2013. “A Practical Guide to Maxent for Modeling Species’ Distributions: What It Does, and Why Inputs and Settings Matter.” <em>Ecography</em> 36: 1058–69.</p>
+</div>
+<div id="ref-phillips2006">
+<p>Phillips, S. J., R. P. Anderson, and R. E. Schapire. 2006. “Maximum Entropy Modeling of Species Geographic Distributions.” <em>Ecological Modelling</em> 190: 231–59.</p>
+</div>
+<div id="ref-Thuiller2009">
+<p>Thuiller, W., B. Lafourcade, R. Engler, and M. B. Araujo. 2009. “BIOMOD - a Platform for Ensemble Forecasting of Species Distributions.” <em>Ecography</em> 32: 369–73.</p>
+</div>
+</div>
+</div>
 
 <!DOCTYPE html>
 <html>
@@ -367,6 +1281,8 @@ $(document).ready(function () {
 </html>
 
 
+</div>
+</div>
 
 </div>
 
@@ -399,6 +1315,32 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
