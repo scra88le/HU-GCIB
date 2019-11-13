@@ -425,8 +425,7 @@ div.tocify {
 
 <div id="introduction" class="section level1">
 <h1><span class="header-section-number">1</span> Introduction</h1>
-<p>In the previous session, we already learned the five main modelling steps for species distribution models (SDMs): (i) conceptualisation, (ii) data preparation, (iii) model fitting, (iv) model assessment, and (v) prediction.</p>
-<p>We have already fitted simple species distribution models (SDMs) in session 4. Remember the five general model building steps: (i) conceptualisation, (ii) data preparation, (iii) model fitting, (iv) model assessment, and (v) prediction. In this practical, we will concentrate on steps (iv)-(v). We will learn how to validate SDMs, visualise the fitted species-environment relationships, and make predictions. For getting a deeper understanding of these single steps, I highly recommend studying more advanced reviews <span class="citation">(Guisan and Zimmermann 2000; <span class="citeproc-not-found" data-reference-id="Guisan2005"><strong>???</strong></span>; Elith and Leathwick 2009)</span> and textbooks on SDMs <span class="citation">(Franklin 2010; Guisan, Thuiller, and Zimmermann 2017)</span>.</p>
+<p>We have already fitted simple species distribution models (SDMs) in session 4. Remember the five general model building steps: (i) conceptualisation, (ii) data preparation, (iii) model fitting, (iv) model assessment, and (v) prediction. In this practical, we will concentrate on steps (iv)-(v). We will learn how to validate SDMs, visualise the fitted species-environment relationships, and make predictions. For getting a deeper understanding of these single steps, I highly recommend studying more advanced reviews <span class="citation">(Guisan and Zimmermann 2000; Guisan and Thuiller 2005; Elith and Leathwick 2009)</span> and textbooks on SDMs <span class="citation">(Franklin 2010; Guisan, Thuiller, and Zimmermann 2017)</span>.</p>
 <div id="recap-of-last-session-data-and-models" class="section level2">
 <h2><span class="header-section-number">1.1</span> Recap of last session: data and models</h2>
 <p>We will continue to work on the Ring Ouzel example of the previous session, using data from the Swiss Breeding Bird Atlas at 1 km resolution observed during the years 1993-1996 <span class="citation">(Schmid et al. 1998)</span>. Environmental data were available from a study by <span class="citation">Zurell et al. (2019)</span> containing bioclimatic, topographic and remote-sensing based vegetation variables already matched to the breeding bird data. Last week, we already looked at correlation structure between predictor variables, ranked the predictors according to their univariate variable importance, estimated a full model and simplified this using the <code>step()</code> function. We saved these R objects and can simply load them now.</p>
@@ -737,56 +736,56 @@ thresh &lt;- optimal.thresholds(DATA= thresh_dat)</code></pre>
 <pre><code>## [1] &quot;Default&quot;
 ##          observed
 ## predicted    1    0
-##         1  548  171
-##         0   98 1718
+##         1  549  172
+##         0   97 1717
 ## [1] &quot;---------------&quot;
 ## [1] &quot;Sens=Spec&quot;
 ##          observed
 ## predicted    1    0
-##         1  580  199
-##         0   66 1690
+##         1  579  203
+##         0   67 1686
 ## [1] &quot;---------------&quot;
 ## [1] &quot;MaxSens+Spec&quot;
 ##          observed
 ## predicted    1    0
-##         1  594  215
-##         0   52 1674
+##         1  592  214
+##         0   54 1675
 ## [1] &quot;---------------&quot;
 ## [1] &quot;MaxKappa&quot;
 ##          observed
 ## predicted    1    0
-##         1  594  215
-##         0   52 1674
+##         1  592  214
+##         0   54 1675
 ## [1] &quot;---------------&quot;
 ## [1] &quot;MaxPCC&quot;
 ##          observed
 ## predicted    1    0
-##         1  561  180
-##         0   85 1709
+##         1  565  182
+##         0   81 1707
 ## [1] &quot;---------------&quot;
 ## [1] &quot;PredPrev=Obs&quot;
 ##          observed
 ## predicted    1    0
-##         1  505  140
-##         0  141 1749
+##         1  502  145
+##         0  144 1744
 ## [1] &quot;---------------&quot;
 ## [1] &quot;ObsPrev&quot;
 ##          observed
 ## predicted    1    0
-##         1  610  273
-##         0   36 1616
+##         1  610  269
+##         0   36 1620
 ## [1] &quot;---------------&quot;
 ## [1] &quot;MeanProb&quot;
 ##          observed
 ## predicted    1    0
-##         1  610  273
-##         0   36 1616
+##         1  610  269
+##         0   36 1620
 ## [1] &quot;---------------&quot;
 ## [1] &quot;MinROCdist&quot;
 ##          observed
 ## predicted    1    0
-##         1  594  215
-##         0   52 1674
+##         1  592  214
+##         0   54 1675
 ## [1] &quot;---------------&quot;</code></pre>
 <p>Have a look at <span class="citation">Liu et al. (2005)</span> to see which thresholds they recommend. Here, we will use the threshold that maximises the sum of sensitivity and specificity:</p>
 <pre class="r"><code>cmx_maxSSS &lt;- cmx(DATA= thresh_dat_cv, threshold=thresh[3,2])</code></pre>
@@ -795,14 +794,14 @@ thresh &lt;- optimal.thresholds(DATA= thresh_dat)</code></pre>
 - the proportion of correctly classified presences, the sensitivity or true positive rate<br />
 - the proportion of correctly classified absences, the specificity or true negative rate</p>
 <pre class="r"><code>pcc(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8946746</code></pre>
+<pre><code>## [1] 0.8942801</code></pre>
 <pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.9195046</code></pre>
+<pre><code>## [1] 0.9164087</code></pre>
 <pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8861832</code></pre>
+<pre><code>## [1] 0.8867125</code></pre>
 <p>Other measures are <em>Kappa</em> and <em>TSS</em> (the true skill statistic). <span class="citation">Allouche, Tsoar, and Kadmon (2006)</span> explain how to calculate these.</p>
 <pre class="r"><code>Kappa(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7439294</code></pre>
+<pre><code>## [1] 0.7426072</code></pre>
 <pre class="r"><code># TSS is not implemented. We write the function ourselves:
 TSS = function(cmx){
     require(PresenceAbsence)
@@ -810,7 +809,7 @@ TSS = function(cmx){
     }
     
 TSS(cmx_maxSSS) </code></pre>
-<pre><code>## [1] 0.8056878</code></pre>
+<pre><code>## [1] 0.8031212</code></pre>
 <p>According to <span class="citation">Araujo et al. (2005)</span>, <em>Kappa</em>&gt;0.4 indicate good predictions. For TSS, we often assume TSS&gt;0.5 to indicate good predictions.</p>
 </div>
 <div id="threshold-independent-performance-measures" class="section level3">
@@ -824,7 +823,7 @@ plot(roc_cv, col = &quot;grey70&quot;, lwd = 2)</code></pre>
 <p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
 <pre class="r"><code># Compute the AUC:
 auc(roc_cv)</code></pre>
-<pre><code>## [1] 0.9513281</code></pre>
+<pre><code>## [1] 0.9516494</code></pre>
 <p>It seems our model is performing pretty well on hold-out data. We can thus attempt making predictions in space and time.</p>
 <p>Please be aware that many packages contain functions for evaluatinng SDMs. As always you have to find your own way. Here, I provide merely examples.</p>
 </div>
@@ -963,6 +962,9 @@ plot(rasterFromXYZ(bio_novel_df), axes=F)</code></pre>
 </div>
 <div id="ref-Franklin2010">
 <p>Franklin, J. 2010. <em>Mapping Species Distributions: Spatial Inference and Prediction</em>. Cambride University Press.</p>
+</div>
+<div id="ref-guisan2005">
+<p>Guisan, A., and W. Thuiller. 2005. “Predicting Species Distribution: Offering More Than Simple Habitat Models.” <em>Ecology Letters</em> 8: 993–1009.</p>
 </div>
 <div id="ref-Guisan2017">
 <p>Guisan, A., W. Thuiller, and N. E. Zimmermann. 2017. <em>Habitat Suitability and Distribution Models with Applications in R</em>. Cambride University Press.</p>
