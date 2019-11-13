@@ -20,6 +20,9 @@
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -251,6 +254,63 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -258,6 +318,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -353,7 +423,570 @@ $(document).ready(function () {
 </div>
 
 
+<div id="introduction" class="section level1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p>In the previous session, we already learned the five main modelling steps for species distribution models (SDMs): (i) conceptualisation, (ii) data preparation, (iii) model fitting, (iv) model assessment, and (v) prediction.</p>
+<p>We have already fitted simple species distribution models (SDMs) in session 4. Remember the five general model building steps: (i) conceptualisation, (ii) data preparation, (iii) model fitting, (iv) model assessment, and (v) prediction. In this practical, we will concentrate on steps (iv)-(v). We will learn how to validate SDMs, visualise the fitted species-environment relationships, and make predictions. For getting a deeper understanding of these single steps, I highly recommend studying more advanced reviews <span class="citation">(Guisan and Zimmermann 2000; <span class="citeproc-not-found" data-reference-id="Guisan2005"><strong>???</strong></span>; Elith and Leathwick 2009)</span> and textbooks on SDMs <span class="citation">(Franklin 2010; Guisan, Thuiller, and Zimmermann 2017)</span>.</p>
+<div id="recap-of-last-session-data-and-models" class="section level2">
+<h2><span class="header-section-number">1.1</span> Recap of last session: data and models</h2>
+<p>We will continue to work on the Ring Ouzel example of the previous session, using data from the Swiss Breeding Bird Atlas at 1 km resolution observed during the years 1993-1996 <span class="citation">(Schmid et al. 1998)</span>. Environmental data were available from a study by <span class="citation">Zurell et al. (2019)</span> containing bioclimatic, topographic and remote-sensing based vegetation variables already matched to the breeding bird data. Last week, we already looked at correlation structure between predictor variables, ranked the predictors according to their univariate variable importance, estimated a full model and simplified this using the <code>step()</code> function. We saved these R objects and can simply load them now.</p>
+<pre class="r"><code># Where have you stored the data? You may have to change the filepath!
+load(&quot;GLMs_RingOuzel_session3.RData&quot;)</code></pre>
+<p>Our workspace should now contain the results from the collinearity check (using <code>select07()</code> from <span class="citation">Dormann et al. (2013)</span>), the full model (containing only weakly correlated variables), and the final model that was obtained through backward-forward stepwise variable selection. We can simply continue to work with these models.</p>
+<pre class="r"><code># Look at the full model again:
+summary(m_full)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = as.formula(our_model_formula), family = &quot;binomial&quot;, 
+##     data = avi_dfst)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.6041  -0.0983  -0.0078   0.2978   3.4668  
+## 
+## Coefficients:
+##               Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)   -3.16417    0.23224 -13.625  &lt; 2e-16 ***
+## bio_5         -6.31733    0.42679 -14.802  &lt; 2e-16 ***
+## I(bio_5^2)    -1.84614    0.17849 -10.343  &lt; 2e-16 ***
+## bio_2          0.68479    0.15757   4.346 1.39e-05 ***
+## I(bio_2^2)    -0.04853    0.05982  -0.811  0.41721    
+## bio_17         0.91937    0.30117   3.053  0.00227 ** 
+## I(bio_17^2)   -0.02963    0.07500  -0.395  0.69282    
+## bio_13         0.24284    0.32791   0.741  0.45895    
+## I(bio_13^2)   -0.28237    0.08005  -3.527  0.00042 ***
+## pet_103       -0.05101    0.06540  -0.780  0.43543    
+## I(pet_103^2)   0.04635    0.04166   1.113  0.26589    
+## prc_swrt      -0.03196    0.22122  -0.144  0.88513    
+## I(prc_swrt^2)  0.07384    0.06603   1.118  0.26346    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 2877.6  on 2534  degrees of freedom
+## Residual deviance: 1078.5  on 2522  degrees of freedom
+## AIC: 1104.5
+## 
+## Number of Fisher Scoring iterations: 8</code></pre>
+<pre class="r"><code># Look at the final model again:
+summary(m_step)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = Turdus_torquatus ~ bio_5 + I(bio_5^2) + bio_2 + 
+##     bio_17 + bio_13 + I(bio_13^2), family = &quot;binomial&quot;, data = avi_dfst)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.5182  -0.1012  -0.0079   0.3142   3.5116  
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -3.04176    0.20186 -15.068  &lt; 2e-16 ***
+## bio_5       -6.30236    0.40918 -15.403  &lt; 2e-16 ***
+## I(bio_5^2)  -1.89134    0.17254 -10.962  &lt; 2e-16 ***
+## bio_2        0.59777    0.11504   5.196 2.03e-07 ***
+## bio_17       0.82496    0.10540   7.827 4.98e-15 ***
+## bio_13       0.27765    0.13905   1.997   0.0458 *  
+## I(bio_13^2) -0.30964    0.05886  -5.260 1.44e-07 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 2877.6  on 2534  degrees of freedom
+## Residual deviance: 1081.9  on 2528  degrees of freedom
+## AIC: 1095.9
+## 
+## Number of Fisher Scoring iterations: 8</code></pre>
+<pre class="r"><code># We can extract our species-environment-data from the model object:
+avi_dfst &lt;- m_step$data
 
+# We can have a look at the ranking of the univariate importance 
+# of the predictor variables (in terms of AIC):
+str(var_sel)</code></pre>
+<pre><code>## List of 3
+##  $ AIC     : Named num [1:30] 1184 1202 1219 1239 1254 ...
+##   ..- attr(*, &quot;names&quot;)= chr [1:30] &quot;bio_5&quot; &quot;bio_10&quot; &quot;ddeg5&quot; &quot;ddeg0&quot; ...
+##  $ cor_mat : num [1:30, 1:30] NA 0.998 0.987 -0.506 -0.519 ...
+##   ..- attr(*, &quot;dimnames&quot;)=List of 2
+##   .. ..$ : chr [1:30] &quot;bio_1&quot; &quot;bio_10&quot; &quot;bio_11&quot; &quot;bio_12&quot; ...
+##   .. ..$ : chr [1:30] &quot;bio_1&quot; &quot;bio_10&quot; &quot;bio_11&quot; &quot;bio_12&quot; ...
+##  $ pred_sel: chr [1:6] &quot;bio_5&quot; &quot;bio_2&quot; &quot;bio_17&quot; &quot;bio_13&quot; ...</code></pre>
+<p>Let’s also read in the original data. Last session, we standardised these prior to modelling. If we want to make predictions later on, we will also need to standardise all environmental data we want to predict to in the same way as our training data.</p>
+<pre class="r"><code>avi_dat &lt;- read.table(&#39;data/Data_SwissBreedingBirds.csv&#39;, header=T, sep=&#39;,&#39;)
+
+sp &lt;- &quot;Turdus_torquatus&quot;
+clim_vars &lt;- names(avi_dat)[69:98]
+
+avi_df &lt;- avi_dat[,c(sp,clim_vars)]
+
+# Store scaling coefficients for later:
+scaled_center &lt;- attributes(scale(avi_df[,-1], center=T, scale=T))$`scaled:center`
+scaled_scale &lt;- attributes(scale(avi_df[,-1], center=T, scale=T))$`scaled:scale`</code></pre>
+</div>
+</div>
+<div id="model-assessment" class="section level1">
+<h1><span class="header-section-number">2</span> Model assessment</h1>
+<p>Before we can use our model for making predictions in space and time, we need to assess model behaviour and predictive performance.</p>
+<div id="visualising-response-curves" class="section level2">
+<h2><span class="header-section-number">2.1</span> Visualising response curves</h2>
+<p>When only looking at parameter estimates, it is sometimes difficult to envision how exactly the fitted response (the “niche” function) looks like. Also, for more complicate machine learning algorithms (that we will get to know in prac 5), there are no parameter estimates to look at, so we need different means to judge the plausibility of the fitted response. The simplest way is to plot the fitted values along the environmental gradients. Let’s first fit a simpler model with only two predictors.</p>
+<pre class="r"><code># Which were the two most important, weakly correlated variables?
+var_sel$pred_sel</code></pre>
+<pre><code>## [1] &quot;bio_5&quot;    &quot;bio_2&quot;    &quot;bio_17&quot;   &quot;bio_13&quot;   &quot;pet_103&quot;  &quot;prc_swrt&quot;</code></pre>
+<pre class="r"><code>my_preds &lt;- var_sel$pred_sel[1:2]
+
+# Paste formula:
+form_2pred &lt;- paste(&#39;Turdus_torquatus ~&#39;,paste(my_preds, paste0(&#39;+ I(&#39;,my_preds,&#39;^2)&#39;),collapse=&#39; + &#39;))
+
+# GLM with 2 predictors incl. linear and quadratic terms:
+m_2pred &lt;- glm( as.formula(form_2pred), family=&#39;binomial&#39;, data=avi_dfst)
+
+# Inspect the model:
+summary(m_2pred)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = as.formula(form_2pred), family = &quot;binomial&quot;, data = avi_dfst)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.9501  -0.1308  -0.0139   0.5665   3.4088  
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) -2.76187    0.18647 -14.811   &lt;2e-16 ***
+## bio_5       -5.86462    0.37095 -15.810   &lt;2e-16 ***
+## I(bio_5^2)  -1.93028    0.16280 -11.857   &lt;2e-16 ***
+## bio_2       -0.10740    0.08137  -1.320    0.187    
+## I(bio_2^2)  -0.04854    0.05113  -0.949    0.342    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 2877.6  on 2534  degrees of freedom
+## Residual deviance: 1176.1  on 2530  degrees of freedom
+## AIC: 1186.1
+## 
+## Number of Fisher Scoring iterations: 8</code></pre>
+<p>From the GLM object we can easily extract the fitted values, and plot them against each of the two environmental predictors.</p>
+<pre class="r"><code># Inspect the model object:
+str(m_2pred,1)</code></pre>
+<pre class="r"><code>par(mfrow=c(1,2))
+plot(avi_dfst$bio_5, m_2pred$fitted.values, pch=19, ylim=c(0,1), xlab=&#39;Bio_5&#39;, ylab=&#39;Occurrence prob.&#39;)
+plot(avi_dfst$bio_2, m_2pred$fitted.values, pch=19, ylim=c(0,1), xlab=&#39;Bio_2&#39;, ylab=&#39;Occurrence prob.&#39;)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p>These point clouds already give quite a good impression how the response curve could look like, but also have a lot of “noise”. Two visualise the estimated occurrence probability for each point combination of the two environmental predictors, we can use the <code>predict()</code> function. This function is available for most SDM algorithms.</p>
+<pre class="r"><code># If we do not provide &quot;newdata&quot;, then predict() should simply return the fitted values: 
+head(predict(m_2pred, type=&#39;response&#39;))</code></pre>
+<pre><code>##            1            2            3            4            5 
+## 8.307735e-01 8.308033e-04 9.968185e-02 6.535483e-01 8.279949e-01 
+##            6 
+## 2.084156e-05</code></pre>
+<pre class="r"><code>head(m_2pred$fitted)</code></pre>
+<pre><code>##            1            2            3            4            5 
+## 8.307735e-01 8.308033e-04 9.968185e-02 6.535483e-01 8.279949e-01 
+##            6 
+## 2.084156e-05</code></pre>
+<pre class="r"><code># Now we want to make predictions for all combinations of the two predictor variables
+# and along their entire environmental gradients:
+xyz &lt;- expand.grid(
+  # We produce a sequence of environmental values within the predictor ranges:
+    seq(min(avi_dfst[,my_preds[1]]),max(avi_dfst[,my_preds[1]]),length=50),
+    seq(min(avi_dfst[,my_preds[2]]),max(avi_dfst[,my_preds[2]]),length=50)
+    )
+names(xyz) &lt;- my_preds
+xyz$z &lt;- predict(m_2pred, newdata=xyz, type=&#39;response&#39;)
+summary(xyz)</code></pre>
+<pre><code>##      bio_5             bio_2               z            
+##  Min.   :-2.7076   Min.   :-3.6673   Min.   :0.0000000  
+##  1st Qu.:-1.5499   1st Qu.:-1.6757   1st Qu.:0.0000764  
+##  Median :-0.3440   Median : 0.3988   Median :0.1739732  
+##  Mean   :-0.3440   Mean   : 0.3988   Mean   :0.3068951  
+##  3rd Qu.: 0.8619   3rd Qu.: 2.4734   3rd Qu.:0.6378746  
+##  Max.   : 2.0196   Max.   : 4.4650   Max.   :0.8519471</code></pre>
+<pre class="r"><code># Now, we have a 3D data structure and want to visualise this.
+# Here, I first set a color palette
+library(RColorBrewer)
+cls &lt;- colorRampPalette(rev(brewer.pal(11, &#39;RdYlBu&#39;)))(100)
+
+library(lattice)
+# Now, we plot the response surface
+wireframe(z ~ bio_5 + bio_2, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1))</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre class="r"><code># We can also rotate the axes to better see the surface
+wireframe(z ~ bio_5 + bio_2, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), screen=list(z = -160, x = -70, y = 3))</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
+<p>This looks very nice. However, if the model gets more complicated and contains more variables than just two, how can we then visualise it?</p>
+<p>One way is to cut the response surface into slices. Most often, we simply plot the response along on environmental gradients while keeping all other gradients constant at their mean. We call this “partial response plots”.</p>
+<pre class="r"><code># Again, we make a new data frame containing the two predictors. However, we only produce a sequence of environmental values for one of the predictors while keeping the other constant at its means.
+par(mfrow=c(1,2))
+
+# Run through both predictors:
+for (i in 1:2){
+  xyz &lt;- data.frame(
+    # Sequence for one predictor:
+    seq(min(avi_dfst[,my_preds[i]]),max(avi_dfst[,my_preds[i]]),length=50),
+    # Calculate the mean of the other predictor:
+      mean(avi_dfst[,my_preds[ ((i)%%2)+1 ]]) 
+    )
+  names(xyz) &lt;- c(my_preds[i], my_preds[-i])
+  xyz$z &lt;- predict(m_2pred, newdata=xyz, type=&#39;response&#39;)
+
+  plot(xyz[,my_preds[i]],xyz$z,type=&#39;l&#39;, ylim=c(0,1), xlab=my_preds[i], ylab=&#39;Occurrence probability&#39;)
+}</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>Let’s go back to our <code>m_step</code> model and plot the response curves for all environmental predictors in that model:</p>
+<pre class="r"><code># Variables in the model:
+predvars &lt;- unique(c(names(coef(m_step))[-1][-grep(&#39;\\^&#39;,names(coef(m_step))[-1])], 
+    sub(&#39;\\^2\\)&#39;,&#39;&#39;,sub(&#39;I\\(&#39;,&#39;&#39;,grep(&#39;\\^&#39;,names(coef(m_step))[-1],value=T))))) 
+predvars</code></pre>
+<pre><code>## [1] &quot;bio_5&quot;  &quot;bio_2&quot;  &quot;bio_17&quot; &quot;bio_13&quot;</code></pre>
+<pre class="r"><code>par(mfrow=c(2,2), mar=c(3,3,1,1)+.1, tcl=-.15, mgp=c(1.4,.3,0))
+
+for (i in seq_len(length(predvars))){
+    xyz &lt;- data.frame(
+        seq(min(avi_dfst[,predvars[i]]),max(avi_dfst[,predvars[i]]),length=50),
+        matrix(colMeans(avi_dfst[,predvars[-i]]),ncol=(length(predvars)-1))
+    )
+    names(xyz)  &lt;- c(predvars[i], predvars[-i])
+    
+    xyz$z &lt;- predict(m_step, newdata=xyz, type=&#39;response&#39;)
+    
+    plot(xyz[,predvars[i]],xyz$z, type=&#39;l&#39;, ylim=c(0,1), xlab=predvars[i], ylab=&#39;Occurrence probability&#39;)
+}</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<div id="inflated-response-curves" class="section level3">
+<h3><span class="header-section-number">2.1.1</span> Inflated response curves</h3>
+<p>Partial response curves only show the response of one variable while the others are kept constant at their mean. For very complex models, especially non-parametric methods that fit interactions implicitly, this does not give a full picture of the potential response. We therefore implemented “inflated response curves” some years ago, that do not only keep the other variables constant at their mean, but also at their median and other quantiles <span class="citation">(Zurell, Elith, and Schroeder 2012)</span>. “Inflated response curves” plot 2D-versions of the multivariate response surfaces.</p>
+<p>Codes for plotting inflated response curves are available from github and we need to source these before plotting.</p>
+<pre class="r"><code># Download code for &quot;Inflated response curves&quot; from github:
+script&lt;-readLines(&quot;https://raw.githubusercontent.com/damariszurell/Rcodes_MapNovelEnvironments_SDMs/master/appendixS1_functions.r&quot;)
+eval(parse(text  = script)) 
+
+# Inflated response curves of our two predictor model:
+par(mfrow=c(1,2)) 
+inflated.response(m_2pred, avi_dfst[,my_preds], method=&quot;stat6&quot;, lwd = 3) </code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre class="r"><code># Inflated response curves of our final model:
+par(mfrow=c(2,2), mar=c(3,3,1,1)+.1, tcl=-.15, mgp=c(1.4,.3,0))
+inflated.response(m_step, avi_dfst[,predvars], method=&quot;stat6&quot;, lwd = 3) </code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
+</div>
+</div>
+<div id="assessing-sdm-performance" class="section level2">
+<h2><span class="header-section-number">2.2</span> Assessing SDM performance</h2>
+<p>In the previous session, we already learned about the measure “explained deviance” that tells us something about the goodness-of-fit, meaning how well the model fits the data.</p>
+<pre class="r"><code>library(ecospat)
+ecospat.adj.D2.glm(m_2pred)</code></pre>
+<pre><code>## [1] 0.5906583</code></pre>
+<pre class="r"><code>ecospat.adj.D2.glm(m_step)</code></pre>
+<pre><code>## [1] 0.623134</code></pre>
+<p>Even our simple two-predictor model has a high explanatory value. However, often we are not only interested in how well our model fits the data but how robust the model is against changes in the input data and, thus, how robust predictions to other places and times might be. This assessment of model performance is often referred to as validation or evaluation. Evaluating the model on the calibration or training data is often referred to as internal validation (“resubstitution”) <span class="citation">(Araujo et al. 2005)</span>. This generally gives a too optimistic picture of model performance. It is better to evaluate the model using data that have not been used for model fitting. One way is to split the data and only train the model on some proportion of the data and validate it on the hold-out data. Potential procedures are repeated split-samples (e.g. splitting into 70% training and 30% test data and repeat several times) and <em>k</em>-fold cross-validation (e.g. 5-fold or 10-fold), where the data are split into <em>k</em> portions, the <em>k</em>th portion is held out for validation and the procedure is repeated <em>k</em> times. If these folds are stratified in geographic or environmental space, we talk of spatial block cross-validation and environmental block cross-validation <span class="citation">(Roberts et al. 2017)</span>.</p>
+<p>Here, we will use 5-fold cross-validation as example. First, we build a small function for making predictions to 5-fold data.</p>
+<pre class="r"><code>library(dismo)
+
+cross.val &lt;- function(model, k=5, data = model$data){
+    # Ensure the dismo package is loaded for &quot;kfold&quot; function:
+    require(dismo) 
+    
+    ks &lt;- kfold(model$data, k = k, by = model$data[,as.character(formula(model)[2])])
+    
+    crossval_preds &lt;- data.frame(row = row.names(data), 
+        crossval_preds = numeric(length = nrow(data))) 
+        
+    for(i in seq_len(k)){
+        train &lt;- data[ks!=i,]
+        test &lt;- data[ks==i,]
+        modtmp &lt;- update(model, data = train)
+        crossval_preds[which(ks==i),2] &lt;- 
+            predict(modtmp, newdata = test, type = &#39;response&#39;)
+        }
+    return(crossval_preds) 
+    }</code></pre>
+<p>Now we can use this function to split our data into 5 folds, re-calibrate the model using only 4/5 of the original data and predict the model to the hold-out 1/5 of the data.</p>
+<pre class="r"><code>preds_cv &lt;- cross.val(m_2pred)</code></pre>
+<p>We receive a data frame containing for each original row entry a cross-validation prediction. We can now compare the fitted values on the training data and the predictions on the cross-validation data.</p>
+<pre class="r"><code>plot(m_2pred$fitted.values, preds_cv[,2], xlab=&#39;Fitted values&#39;, ylab=&#39;Predicted values from CV&#39;)
+abline(0,1,col=&#39;red&#39;,lwd=2)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<div id="threshold-dependent-performance-measures" class="section level3">
+<h3><span class="header-section-number">2.2.1</span> Threshold-dependent performance measures</h3>
+<p>Now, we want to know how well our model predicts the observations. Different measures are available for quantifying this. A lot of these measures are threshold-dependent. You have probably realised that our model predicts a continuous response, the probability of occurrence, while our observations are binary. Many performance measures rely on comparisons like “How many presence observations does the model correctly predict as presence”. In order to answer that we first need to convert the continuous probabilities into binary predictions. Different thresholds are introduced in <span class="citation">Liu et al. (2005)</span>. Most of these are implemented in the <code>PresenceAbsence</code> package in the <code>optimal.thresholds</code> function.</p>
+<pre class="r"><code>library(PresenceAbsence)
+
+# We first prepare our data:
+thresh_dat &lt;- data.frame(
+  ID = seq_len(nrow(avi_dfst)), 
+    obs = avi_dfst$Turdus_torquatus,
+    pred = m_2pred$fitted)
+thresh_dat_cv &lt;- data.frame(
+  ID = seq_len(nrow(avi_dfst)), 
+    obs = avi_dfst$Turdus_torquatus,
+    pred = preds_cv[,2])
+        
+# Then, we find the optimal thresholds:     
+thresh &lt;- optimal.thresholds(DATA= thresh_dat)</code></pre>
+<p>Now, we can compare observed vs. predicted presences and absences based on these tresholds. For this, we take our predictions from the cross-validation. The comparison is easiest illustrated in a confusion matrix, for example using the function <code>cmx</code> in the <code>PresenceAbsence</code> package.</p>
+<pre class="r"><code>for (i in 1:9) {
+    print(as.character(thresh[i,1]))
+    print(cmx(DATA= thresh_dat_cv, threshold=thresh[i,2]))
+    print(&#39;---------------&#39;)
+}</code></pre>
+<pre><code>## [1] &quot;Default&quot;
+##          observed
+## predicted    1    0
+##         1  548  171
+##         0   98 1718
+## [1] &quot;---------------&quot;
+## [1] &quot;Sens=Spec&quot;
+##          observed
+## predicted    1    0
+##         1  580  199
+##         0   66 1690
+## [1] &quot;---------------&quot;
+## [1] &quot;MaxSens+Spec&quot;
+##          observed
+## predicted    1    0
+##         1  594  215
+##         0   52 1674
+## [1] &quot;---------------&quot;
+## [1] &quot;MaxKappa&quot;
+##          observed
+## predicted    1    0
+##         1  594  215
+##         0   52 1674
+## [1] &quot;---------------&quot;
+## [1] &quot;MaxPCC&quot;
+##          observed
+## predicted    1    0
+##         1  561  180
+##         0   85 1709
+## [1] &quot;---------------&quot;
+## [1] &quot;PredPrev=Obs&quot;
+##          observed
+## predicted    1    0
+##         1  505  140
+##         0  141 1749
+## [1] &quot;---------------&quot;
+## [1] &quot;ObsPrev&quot;
+##          observed
+## predicted    1    0
+##         1  610  273
+##         0   36 1616
+## [1] &quot;---------------&quot;
+## [1] &quot;MeanProb&quot;
+##          observed
+## predicted    1    0
+##         1  610  273
+##         0   36 1616
+## [1] &quot;---------------&quot;
+## [1] &quot;MinROCdist&quot;
+##          observed
+## predicted    1    0
+##         1  594  215
+##         0   52 1674
+## [1] &quot;---------------&quot;</code></pre>
+<p>Have a look at <span class="citation">Liu et al. (2005)</span> to see which thresholds they recommend. Here, we will use the threshold that maximises the sum of sensitivity and specificity:</p>
+<pre class="r"><code>cmx_maxSSS &lt;- cmx(DATA= thresh_dat_cv, threshold=thresh[3,2])</code></pre>
+<p>From such a confusion matrix, we can calculate different evaluation criteria. For example,<br />
+- the proportion of correctly classified test observations <code>pcc</code><br />
+- the proportion of correctly classified presences, the sensitivity or true positive rate<br />
+- the proportion of correctly classified absences, the specificity or true negative rate</p>
+<pre class="r"><code>pcc(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8946746</code></pre>
+<pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.9195046</code></pre>
+<pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.8861832</code></pre>
+<p>Other measures are <em>Kappa</em> and <em>TSS</em> (the true skill statistic). <span class="citation">Allouche, Tsoar, and Kadmon (2006)</span> explain how to calculate these.</p>
+<pre class="r"><code>Kappa(cmx_maxSSS, st.dev=F)</code></pre>
+<pre><code>## [1] 0.7439294</code></pre>
+<pre class="r"><code># TSS is not implemented. We write the function ourselves:
+TSS = function(cmx){
+    require(PresenceAbsence)
+    sensitivity(cmx, st.dev=F)+specificity(cmx, st.dev=F)-1
+    }
+    
+TSS(cmx_maxSSS) </code></pre>
+<pre><code>## [1] 0.8056878</code></pre>
+<p>According to <span class="citation">Araujo et al. (2005)</span>, <em>Kappa</em>&gt;0.4 indicate good predictions. For TSS, we often assume TSS&gt;0.5 to indicate good predictions.</p>
+</div>
+<div id="threshold-independent-performance-measures" class="section level3">
+<h3><span class="header-section-number">2.2.2</span> Threshold-independent performance measures</h3>
+<p>The most common evaluation statistic that avoids thresholding the data is AUC - the area under the receiver-operating characteristic (ROC) curve. ROC curves are generated by calculating sensitivity (true positive rate) and specificity (true negative rate) for many thresholds along the entire range of predicted probabilities. Then, (1-specificity) is plotted on the x-axis against sensitivity on the y axis. The area under this curve is called the AUC. The further the generated curve deviates from a the 1:1 line towards the upper-left corner, the better the model predicts presence/absence of a species. If we would take a random presence and a random absence from our observations and make predictions, than AUC can be interpeted as the chance of assigning a higher predicted occurrence probability to the presence compared to the absence point. Typically, we regard AUC&gt;0.7 as indicating fair predictions <span class="citation">(Araujo et al. 2005)</span>.</p>
+<pre class="r"><code>library(AUC)
+
+# Let&#39;s have a look a the ROC curve:
+roc_cv &lt;- roc(preds_cv[,2], as.factor(avi_dfst$Turdus_torquatus))
+plot(roc_cv, col = &quot;grey70&quot;, lwd = 2)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<pre class="r"><code># Compute the AUC:
+auc(roc_cv)</code></pre>
+<pre><code>## [1] 0.9513281</code></pre>
+<p>It seems our model is performing pretty well on hold-out data. We can thus attempt making predictions in space and time.</p>
+<p>Please be aware that many packages contain functions for evaluatinng SDMs. As always you have to find your own way. Here, I provide merely examples.</p>
+</div>
+</div>
+</div>
+<div id="spatio-temporal-predictions" class="section level1">
+<h1><span class="header-section-number">3</span> Spatio-temporal predictions</h1>
+<p>We have already learned how to make predictions using the function <code>predict</code> and also using the argument <code>newdata</code>. All we need for transferring our model to other places and times are the respective environmental variables.</p>
+<p>As we have learned in previous sessions, we can download current and future climate layers from databased such as <a href="http://www.worldclim.org/">WorldClim</a> and [CHELSA](<a href="http://chelsa-climate.org/" class="uri">http://chelsa-climate.org/</a>.</p>
+<pre class="r"><code># First set your file path that you want to download climate data to or where you have stored climate data already.
+my_filepath &lt;- &#39;data/clim_data&#39;</code></pre>
+<pre class="r"><code>library(raster)
+
+# Please note that you have to set download=T if you haven&#39;t downloaded the data before:
+bio_curr &lt;- getData(&#39;worldclim&#39;, var=&#39;bio&#39;, download=F, res=0.5, lon=5.5, lat=45.5, path=my_filepath)
+
+# Please note that you have to set download=T if you haven&#39;t downloaded the data before:
+bio_fut &lt;- getData(&#39;CMIP5&#39;, var=&#39;bio&#39;, download=F, res=0.5, rcp=45, model=&#39;NO&#39;, year=50, path=my_filepath)
+
+# The names of these raster don&#39;t match the bioclim names in our bird data.
+names_wc_curr &lt;- names(bio_curr)
+names_wc_curr &lt;- sub(&#39;bio&#39;,&#39;bio_&#39;,sub(&#39;_16&#39;,&#39;&#39;,names_wc_curr))
+
+names_wc_fut &lt;- names(bio_fut)
+names_wc_fut &lt;- sub(&#39;no45bi50&#39;,&#39;bio_&#39;,names_wc_fut)</code></pre>
+<p>We will use a background mask of Switzerland to clip the data. This mask is in Swiss coordinates, which is the target coordinate system, and we thus need to reproject the worldclim layers. To speed things up, we will first crop the climate layers.</p>
+<pre class="r"><code>bg &lt;- raster(&#39;/vsicurl/https://damariszurell.github.io/SDM-Intro/CH_mask.tif&#39;)
+
+ch_ext &lt;- c(5, 11, 45, 48)
+
+# Crop and reproject current climate
+bio_curr &lt;- crop(bio_curr, ch_ext)
+bio_curr &lt;- projectRaster(bio_curr, bg)
+bio_curr &lt;- resample(bio_curr, bg)
+bio_curr &lt;- mask(bio_curr, bg)
+names(bio_curr) &lt;- names_wc_curr
+
+# All temperature related bioclim variables (except isothermality bio3) need to be rescaled
+for (i in c(1:2,4:11)) bio_curr[[i]] &lt;- bio_curr[[i]]/10
+
+# Crop and reproject current climate
+bio_fut &lt;- crop(bio_fut, ch_ext)
+bio_fut &lt;- projectRaster(bio_fut, bg)
+bio_fut &lt;- resample(bio_fut, bg)
+bio_fut &lt;- mask(bio_fut, bg)
+names(bio_fut) &lt;- names_wc_fut
+
+# All temperature related bioclim variables (except isothermality bio3) need to be rescaled
+for (i in c(1:2,4:11)) bio_fut[[i]] &lt;- bio_fut[[i]]/10</code></pre>
+<p>Now, we can make continuous predictions and threshold them to receive binary predictions.</p>
+<pre class="r"><code># Prepare data frames
+bio_curr_df &lt;- data.frame(rasterToPoints(bio_curr))
+bio_fut_df &lt;- data.frame(rasterToPoints(bio_fut))
+
+# Scale environmental variables analogous to training data
+bio_curr_df[,names_wc_curr] &lt;- scale(bio_curr_df[,names_wc_curr], center=scaled_center[names_wc_curr], scale=scaled_scale[names_wc_curr])
+bio_fut_df[,names_wc_fut] &lt;- scale(bio_fut_df[,names_wc_fut], center=scaled_center[names_wc_fut], scale=scaled_scale[names_wc_fut])
+
+# Make continuous predictions:
+bio_curr_df$pred_glm &lt;- predict(m_2pred, newdata= bio_curr_df, type=&quot;response&quot;)
+bio_fut_df$pred_glm &lt;- predict(m_2pred, newdata= bio_fut_df, type=&quot;response&quot;)
+
+# Make binary predictions:
+bio_curr_df$bin_glm &lt;- ifelse(bio_curr_df$pred_glm &gt;= thresh[3,2], 1, 0)
+bio_fut_df$bin_glm &lt;- ifelse(bio_fut_df$pred_glm &gt;= thresh[3,2], 1, 0)
+
+# Make raster stack of predictions to current environment:
+r_pred_curr &lt;- rasterFromXYZ(bio_curr_df[,!names(bio_curr_df)%in%names_wc_curr])
+plot(r_pred_curr, axes=F)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
+<pre class="r"><code># Make raster stack of predictions to future environment:
+r_pred_fut &lt;- rasterFromXYZ(bio_fut_df[,!names(bio_fut_df)%in%names_wc_fut])
+plot(r_pred_fut, axes=F)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-27-2.png" width="672" /></p>
+<div id="assessing-novel-environments" class="section level2">
+<h2><span class="header-section-number">3.1</span> Assessing novel environments</h2>
+<p>Novel environments are conditions that were not realised in the sampled data but are realised in the projection data. For example, in the future it may be warmer than today. If the entire niche of the species is encompassed by data, then the model does not need to extrapolate even if the projection data contain some novel environments. Mostly, novel environments only prove problematic if the niche is truncated in the sampled data <span class="citation">(Zurell, Elith, and Schroeder 2012)</span>. Novel environments can be assessed in different ways. MESS (Multivariate environmental similarity surface) maps are contained in the <code>dismo</code> package and described in <span class="citation">Elith, Kearney, and Phillips (2010)</span>. They assess for each environmental variables separately whether the projection data contain novel conditions beyond the sampled range.</p>
+<pre class="r"><code># MESS maps from the dismo package:
+r.mess &lt;- mess(bio_fut[[my_preds]], avi_df[,my_preds])
+plot(r.mess, axes=F)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
+<pre class="r"><code># Negative values indicated dissimilar=novel environments:
+r.mess.mask &lt;- r.mess&lt;0
+r.mess.mask &lt;- mask(r.mess.mask,bg)
+plot(r.mess.mask, axes=F)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-28-2.png" width="672" /></p>
+<p>Another way to assess novel environments is using “Environmental overlap masks” from <span class="citation">Zurell, Elith, and Schroeder (2012)</span>. The main difference to MESS maps is that also novel combinations of environmental variables are tested. As indicated above, this may be more important when using very flexible, non-parametric methods. But for the sake of completeness, I mention it here. The necessary codes can be downloaded from Github - in fact, we already sourced them together with the “Inflated response curves”.</p>
+<pre class="r"><code># Environmental overlap masks (eo.masks) from Zurell et al. (2012). Values of 1 in the eo.mask will indicate novel environmental conditions
+bio_fut_df$eo.mask &lt;- eo.mask(avi_dfst[,my_preds], bio_fut_df[,my_preds])
+r.eo.mask &lt;- rasterFromXYZ(bio_fut_df[,c(&#39;x&#39;,&#39;y&#39;,&#39;eo.mask&#39;)])
+plot(r.eo.mask, axes=F)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<pre class="r"><code># Compare MESS maps and environmental overlap masks
+par(mfrow=c(1,2))
+plot(r.mess.mask, main=&#39;MESS&#39;, axes=F)
+plot(r.eo.mask, main=&#39;EO&#39;, axes=F)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-29-2.png" width="672" /></p>
+<p>We can now explore model projections for analogous climates versus novel climates:</p>
+<pre class="r"><code># Predictions to analogous climates:
+bio_analog_df &lt;- bio_fut_df[,c(&#39;x&#39;,&#39;y&#39;,&#39;pred_glm&#39;)]
+bio_analog_df[bio_fut_df$eo.mask&gt;0,c(&#39;pred_glm&#39;)] &lt;- NA
+plot(rasterFromXYZ(bio_analog_df), axes=F)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
+<pre class="r"><code># Predictions to novel climates:
+bio_novel_df &lt;- bio_fut_df[,c(&#39;x&#39;,&#39;y&#39;,&#39;pred_glm&#39;)]
+bio_novel_df[bio_fut_df$eo.mask==0,c(&#39;pred_glm&#39;)] &lt;- NA
+plot(rasterFromXYZ(bio_novel_df), axes=F)</code></pre>
+<p><img src="4_SDM_eval_files/figure-html/unnamed-chunk-30-2.png" width="672" /></p>
+<p>Once you have your predictions, you could answer all sorts of questions. For example,</p>
+<div class="alert alert-info">
+<p><strong><strong>Questions:</strong></strong></p>
+<ul>
+<li>Is the Ring Ouzel range expected to increas or decrease under future climate change?</li>
+<li>Where do Ring Ouzel lose and gain habitat under future climate change?</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references">
+<div id="ref-allouche2006">
+<p>Allouche, Omri, Asaf Tsoar, and Ronen Kadmon. 2006. “Assessing the Accuracy of Species Distribution Models: Prevalence, Kappa and the True Skill Statistic (Tss).” <em>Journal of Applied Ecology</em> 43: 1223–32.</p>
+</div>
+<div id="ref-araujo2005">
+<p>Araujo, Miguel B., Richard G. Pearson, Wilfried Thuillers, and Markus Erhard. 2005. “Validation of Species-Climate Impact Models Under Climate Change.” <em>Global Change Biology</em> 11: 1504–13.</p>
+</div>
+<div id="ref-Dormann2013">
+<p>Dormann, C. F., J. Elith, S. Bacher, C. Buchmann, G. Carl, G. Carre, J. R. Garcia Marquez, et al. 2013. “Collinearity: A Review of Methods to Deal with It and a Simulation Study Evaluating Their Performance.” <em>Ecography</em> 36: 27–46.</p>
+</div>
+<div id="ref-Elith2010">
+<p>Elith, J., M. Kearney, and S. Phillips. 2010. “The Art of Modelling Range-Shifting Species.” <em>Methods in Ecology and Evolution</em> 1: 330–42.</p>
+</div>
+<div id="ref-Elith2009">
+<p>Elith, J., and J. R. Leathwick. 2009. “Species Distribution Models: Ecological Explanation and Prediction Across Space and Time.” <em>Annual Review of Ecology, Evolution, and Systematics</em> 40: 677–97.</p>
+</div>
+<div id="ref-Franklin2010">
+<p>Franklin, J. 2010. <em>Mapping Species Distributions: Spatial Inference and Prediction</em>. Cambride University Press.</p>
+</div>
+<div id="ref-Guisan2017">
+<p>Guisan, A., W. Thuiller, and N. E. Zimmermann. 2017. <em>Habitat Suitability and Distribution Models with Applications in R</em>. Cambride University Press.</p>
+</div>
+<div id="ref-Guisan2000">
+<p>Guisan, A., and N. E. Zimmermann. 2000. “Predictive Habitat Distribution Models in Ecology.” <em>Ecological Modelling</em> 135: 147–86.</p>
+</div>
+<div id="ref-Liu2005">
+<p>Liu, C., P. M. Berry, T. P. Dawson, and R. G. Pearson. 2005. “Selecting Thresholds of Occurrence in the Prediction of Species Distributions.” <em>Ecography</em> 28: 385–93.</p>
+</div>
+<div id="ref-Roberts2017">
+<p>Roberts, D. R., V. Bahn, S. Ciuti, M. S. Boyce, J. Elith, G. Guillera-Arroita, S: Hauenstein, et al. 2017. “Cross-Validation Strategies for Data with Temporal, Spatial, Hierarchical, or Phylogenetic Structure.” <em>Ecography</em> 40: 913–29.</p>
+</div>
+<div id="ref-Schmid1998">
+<p>Schmid, H., R. Luder, B. Naef-Daenzer, R. Graf, and N. Zbinden. 1998. <em>Schweizer Brutvogelatlas. Verbreitung Der Brutvoegel Inder Schweiz Und Im Fuerstentum Liechtenstein 1993-1996</em>. Swiss Ornithological Institute, Sempach, Switzerland.</p>
+</div>
+<div id="ref-Zurell2012">
+<p>Zurell, D., J. Elith, and B. Schroeder. 2012. “Predicting to New Environments: Tools for Visualising Model Behaviour and Impacts on Mapped Distributions.” <em>Diversity and Distributions</em> 18: 628–34.</p>
+</div>
+<div id="ref-Zurell2019">
+<p>Zurell, D., N. E. Zimmermann, H. Gross, A. Baltensweiler, T. Sattler, and R. O. Wueest. 2019. “Testing Species Assemblage Predictions from Stacked and Joint Species Distribution Models.” <em>Journal of Biogeography</em>. <a href="https://doi.org/10.1111/jbi.13608">https://doi.org/10.1111/jbi.13608</a>.</p>
+</div>
+</div>
+</div>
 
 <!DOCTYPE html>
 <html>
@@ -367,6 +1000,8 @@ $(document).ready(function () {
 </html>
 
 
+</div>
+</div>
 
 </div>
 
@@ -399,6 +1034,32 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
