@@ -20,6 +20,9 @@
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -251,6 +254,63 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -258,6 +318,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -314,9 +384,6 @@ $(document).ready(function () {
     <li>
       <a href="8_dispersal.html">8. Dispersal models</a>
     </li>
-    <li>
-      <a href="9_populations.html">9. Population dynamic models</a>
-    </li>
   </ul>
 </li>
       </ul>
@@ -353,7 +420,516 @@ $(document).ready(function () {
 </div>
 
 
+<div id="introduction" class="section level1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p>In practical 5, we got to know several SDM algorithms <span class="citation">(Elith et al. 2006; Thuiller et al. 2009; Guisan, Thuiller, and Zimmermann 2017)</span>. But how do we proceed with all these models now? In the end, it would be handy to just work with a single, general prediction. One way to achive a single prediction would be select the best performing algorithm. However, we have also seen that different models make different assumptions and extrapolate differently to new environments. A priori, it is difficult to judge which of the algorithms will perform best in new situations. Ensemble models have been introduced as an alternative <span class="citation">(Araujo and New 2007)</span>. These combine different models and provide information about the overall trend and the uncertainty around this trend <span class="citation">(Guisan, Thuiller, and Zimmermann 2017; Thuiller et al. 2019)</span>. Sometimes, the term ensembles is used synomously with model averaging <span class="citation">(Dormann et al. 2018)</span> when only different model algorithms are combined. According to <span class="citation">Araujo and New (2007)</span>, ensembles could also take into account varying initial and boundary conditions (e.g. different data inputs, and different future scenarios).</p>
+<p>In ensembles, predictions can be combined or averaged in different ways <span class="citation">(Thuiller et al. 2009)</span>. Simple averages of predictions are derived using the arithmetic mean or the median. An alternative is to use weighted averages. Here, each model receives a weight derived from information criteria (e.g. AIC) or from predictive performance (e.g. AUC or TSS derived from cross-validation or split-sample approaches; see pracs 4-5). To assess uncertainty in model predictions, we can, for example, calculate the coefficient of variation or standard deviation.</p>
+<p>Here, we will concentrate on how different algorithms can be combined into ensemble predictions. This is primarily meant to show you the main workflow. The ensembles can be adopted individually by using less, more or simply other algorithms, by using different parameterisations for the different algorithms, by using different input data (e.g. atlas data vs. range maps), and projections can be made to different scenarios of future (or past) global change.</p>
+<p>There is one important note for forecast ensembles. Typically, we would make projections under climate change or land use change for scenarios derived from different climate models or land use models. This captures the uncertainty from different underlying model assumptions. This should not be confused with different storylines (the old SRES storylines or newer RCPs in climate models, or the SSPs in land use models; <span class="citation">Vuuren and Carter (2013)</span>). When making projections into the future, we would typically combine ensembles of predictions for different SDM algorithms and different climate and land use models. However, we not combine projections for different storylines, but would want to analyses the potential pathways separately.</p>
+</div>
+<div id="data" class="section level1">
+<h1><span class="header-section-number">2</span> Data</h1>
+<div id="species-data" class="section level2">
+<h2><span class="header-section-number">2.1</span> Species data</h2>
+<p>As in the previous prac, we will work with dataset of British breeding and wintering birds <span class="citation">(Gillings et al. 2019)</span>. The data contain breeding bird records in 20-year cycles (1968-1972, 1988-1991, 2008-2011 and) wintering bird records in 30-year cycles (1981/1982-1983-1984, 2007/2008-2010/2011) at a 10 km spatial resolution throughout Britain, Ireland, the Isle of Man and the Channel Islands. The data are available through the British Trust of Ornithology (www.bto.org) and can be downloaded <a href="https://www.bto.org/sites/default/files/atlas_open_data_files.zip">here</a>.</p>
+<p>In the last practical, we concentrated on the most recent atlas period 2008-2011. Specifically, we extracted the confirmed breeding occurrences for Ring Ouzel, treated all cells outside the confirmed and potential breeding sites as absences, and spatially thinned the data to reduce problems with spatial autocorrelation. You should have saved the data object from last prac. If not, please repeat section 2.1 in <a href="5_SDM_algorithms.html#21_species_data">practical 5 (SDM algorithms)</a>.</p>
+<pre class="r"><code># You may have to adapt the filepath!
+load(file=&#39;UK_RingOuzel_thinned.RData&#39;)
 
+# We also read in UK bird data (you may have to adapt the filepath)
+bird_dist &lt;- read.table(&#39;data/distributions.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
+grid_ref &lt;- read.table(&#39;data/UK_10km_gridref.csv&#39;,header=T,sep=&#39;,&#39;)</code></pre>
+</div>
+<div id="climate-data" class="section level2">
+<h2><span class="header-section-number">2.2</span> Climate data</h2>
+<p>In the last practical, you also downloaded the climate data and we can now simply load it using the <code>raster</code> package. We take the background from the distribution data.</p>
+<pre class="r"><code>library(raster)
+
+# PREPARE BACKGROUND
+# Coordinate reference
+proj_UK &lt;- &#39;+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs&#39;
+
+# Define the spatial background of UK
+bg &lt;- subset(bird_dist,period==&quot;2008-11&quot; &amp; resolution==10 &amp; island==&#39;B&#39;)[,c(4:6)]
+bg &lt;- bg[!duplicated(bg$grid),]
+bg &lt;- merge(bg, grid_ref)[,4:5]
+bg$val &lt;- 1
+bg &lt;- rasterFromXYZ(bg, crs=proj_UK)
+
+
+
+# GET CLIMATE DATA
+# Please note that you have to set download=T if you haven&#39;t downloaded the data before:
+bio_curr &lt;- getData(&#39;worldclim&#39;, var=&#39;bio&#39;, download=F, lon=-5, lat=55, res=5, path=my_filepath)
+
+# UK extent in lon/lat coordinates
+ch_uk &lt;- c(-12, 3, 48, 62)
+
+# Crop and reproject current climate
+bio_curr &lt;- crop(bio_curr, ch_uk)
+bio_curr &lt;- projectRaster(bio_curr, bg)
+bio_curr &lt;- resample(bio_curr, bg)
+bio_curr &lt;- mask(bio_curr, bg)</code></pre>
+</div>
+<div id="join-species-and-climate-data" class="section level2">
+<h2><span class="header-section-number">2.3</span> Join species and climate data</h2>
+<p>Finally, we join the species and climatic data.</p>
+<pre class="r"><code>sp_thinned &lt;- na.exclude(data.frame(sp_thinned,extract(bio_curr,sp_thinned[,1:2])))</code></pre>
+</div>
+</div>
+<div id="model-fitting-and-assessment" class="section level1">
+<h1><span class="header-section-number">3</span> Model fitting and assessment</h1>
+<div id="fit-different-model-algorithms" class="section level2">
+<h2><span class="header-section-number">3.1</span> Fit different model algorithms</h2>
+<p>In the practical 5, we already fitted different model algorithms. Here, we refit them very quickly. Remember, we have to select weakly correlated variables first. If you haven’t saved the ones from practical 5, please source the <code>select07()</code> function from <a href="3_SDM_intro.html#424_variable_selection:_removing_highly_correlated_variables">practical 3</a>.</p>
+<pre class="r"><code># We remove strongly correlated variables, keeping those with highest univariate importance:
+pred_names &lt;- names(bio_curr)
+
+# Select weakly correlated variables:
+var_sel &lt;- select07(pred_names=pred_names, response_name=&#39;Turdus_torquatus&#39;, data=sp_thinned,  threshold = 0.5)
+
+# For today&#39;s session, we will only consider the two most important, weakly correlated variables
+my_preds &lt;- var_sel$pred_sel[1:2]</code></pre>
+<pre class="r"><code>library(dismo)
+
+# Fit BIOCLIM model
+m_bc &lt;- bioclim(bio_curr[[my_preds]], sp_thinned[sp_thinned$Turdus_torquatus==1,c(&#39;EASTING&#39;,&#39;NORTHING&#39;)])
+
+# Fit Domain model
+m_dom &lt;- domain(bio_curr[[my_preds]], sp_thinned[sp_thinned$Turdus_torquatus==1,c(&#39;EASTING&#39;,&#39;NORTHING&#39;)])
+
+# Fit generalised linear model (GLM)
+m_glm &lt;- step(glm( as.formula(
+        paste(&#39;Turdus_torquatus ~&#39;,paste(my_preds,paste0(&#39;+ I(&#39;,my_preds,&#39;^2)&#39;),collapse=&#39; + &#39;))),
+    family=&#39;binomial&#39;, data=sp_thinned))
+
+# Fit generalised additive model (GAM) with cubic smoothing splines
+library(gam)
+m_gam &lt;- gam( as.formula(
+        paste(&#39;Turdus_torquatus ~&#39;,paste(paste0(&#39;s(&#39;,my_preds,&#39;,df=4)&#39;),collapse=&#39; + &#39;))),
+    family=&#39;binomial&#39;, data=sp_thinned)
+
+# Fit Maxent
+library(maxnet)
+m_maxent &lt;- maxnet(p=sp_thinned$Turdus_torquatus, data=sp_thinned[,my_preds],
+    maxnet.formula(p=sp_thinned$Turdus_torquatus, data=sp_thinned[,my_preds], classes=&quot;lqpht&quot;))
+
+# Fit classification and regression tree (CART)
+library(rpart)
+m_cart &lt;- rpart( as.formula(
+        paste(&#39;Turdus_torquatus ~&#39;,paste(my_preds,collapse=&#39; + &#39;))),
+    data=sp_thinned, control=rpart.control(minsplit=20,xval=10))
+
+# Fit Random Forest (RF)
+library(randomForest)
+m_rf &lt;- randomForest( x=sp_thinned[,my_preds], y=as.factor(sp_thinned$Turdus_torquatus), 
+    ntree=1000, importance =T)
+
+# Fit boosted regression tree (BRT)
+library(gbm)
+m_brt &lt;- gbm.step(data = sp_thinned, 
+    gbm.x = my_preds,
+    gbm.y = &#39;Turdus_torquatus&#39;, 
+    family = &#39;bernoulli&#39;,
+    tree.complexity = 2,
+    bag.fraction = 0.75,
+    learning.rate = 0.001,
+    verbose=F)</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+</div>
+<div id="automatising-model-assessment" class="section level2">
+<h2><span class="header-section-number">3.2</span> Automatising model assessment</h2>
+<p>We have also assessed model performance on training data last week. To simplify the next working steps, we write functions that automatically perform internal validation (on training data) or cross-validation for our models. These functions are mainly meant to show you how you can automate your workflow. It is certainly not the single best way to do it. Also, there are packages available like <em>biomod2</em> which will do the model fitting and cross-validation plus ensemble for you. Check them out.</p>
+<p>We first define several functions for making predictions, cross-validation and calculating performance measures</p>
+<pre class="r"><code># First, a function for deriving predictions. This function first determines which algorithm was used for model calibration, and then makes predictions using this algorithm.
+make.preds &lt;- function(model, newdata) {
+    require(dismo)
+    require(gam)
+    require(rpart)
+    require(randomForest)
+    require(gbm)
+    require(maxnet)
+    
+    switch(class(model)[1],
+        Bioclim = predict(model, newdata),
+        Domain = predict(model, newdata),
+        glm = predict(model, newdata, type=&#39;response&#39;),
+        Gam = predict(model, newdata, type=&#39;response&#39;),
+        rpart = predict(model, newdata),
+        randomForest = predict(model, newdata, type=&#39;prob&#39;)[,2],
+        gbm = predict.gbm(model, newdata, 
+            n.trees=model$gbm.call$best.trees, type=&quot;response&quot;),
+        maxnet = predict(model, newdata, type=&quot;logistic&quot;))
+}
+
+
+#------------------------
+
+# Second, a function for deriving cross-validated predictions. The function partitions the data into k folds, determines the model algorithm, updates the model for the new training data and makes predictions to the hold-out data using this algorithm.
+crossval.preds &lt;- function(model, traindat, colname_species, colname_pred,
+    env_r, colname_coord, kfold) {
+    require(dismo)  
+    require(gam)
+    require(rpart)
+    require(randomForest)
+    require(gbm)
+    require(maxnet)
+    
+    # Make k-fold data partitions
+    ks &lt;- kfold(traindat, k = kfold, by = traindat[,colname_species])
+    
+    cross_val_preds &lt;- data.frame(row = row.names(traindat), 
+        cross_val_preds = numeric(length = nrow(traindat))) 
+    
+    for(i in seq_len(kfold)){
+        cv_train &lt;- traindat[ks!=i,]
+        cv_test &lt;- traindat[ks==i,]
+        
+        # Because we used the gbm.step() for BRTs, we need a small work-around:
+        if (class(model)[1]==&#39;gbm&#39;) {
+            cv_train_gbm &lt;- cv_train;
+            names(cv_train_gbm)[names(cv_train_gbm)==colname_species] &lt;- 
+                model$response.name
+            }
+
+        # We update the model for the new training data
+        modtmp &lt;- switch(class(model)[1],
+            Bioclim = bioclim(env_r[[colname_pred]], cv_train[cv_train[, colname_species]==1, colname_coord]),
+            Domain = domain(env_r[[colname_pred]], cv_train[cv_train[, colname_species]==1, colname_coord]),
+            glm = update(model, data=cv_train),
+            Gam = update(model, data=cv_train),
+            rpart = update(model, data=cv_train),
+            randomForest = update(model, data=cv_train),                
+            gbm = gbm(model$call, &#39;bernoulli&#39;, data=cv_train_gbm[,c(colname_pred,model$response.name)], n.trees=model$gbm.call$best.trees, shrinkage=model$gbm.call$learning.rate, bag.fraction=model$gbm.call$bag.fraction, interaction.depth=model$gbm.call$tree.complexity),
+            maxnet = maxnet(p= cv_train[,colname_species], data= cv_train[,colname_pred]))
+        
+        # We make predictions for k-fold:
+        if (class(model)[1]==&#39;gbm&#39;) {
+            cross_val_preds[which(ks==i),2] &lt;- 
+                predict.gbm(modtmp, cv_test[, colname_pred], n.trees=model$gbm.call$best.trees, type=&quot;response&quot;)
+        } else {
+            cross_val_preds[which(ks==i),2] &lt;- make.preds(modtmp, cv_test[, colname_pred])
+            }
+        }
+    cross_val_preds[,2]
+    }
+    
+
+#------------------------
+
+# Third, a function for calculating performance measures for a vector of predictions:   
+calc.eval &lt;- function(dat, colname_species, preds, thresh_method=&#39;MaxSens+Spec&#39;){
+    require(PresenceAbsence)
+    require(dismo)  
+    
+    # Helper functions - we had defined them before in &quot;SDM_functions.r&quot;. However,
+    # if we want this code to be independent, we have to insert the functions here again.
+    # True Skill Statistic:
+    TSS = function(cmx){
+        PresenceAbsence::sensitivity(cmx, st.dev=F) + 
+        PresenceAbsence::specificity(cmx, st.dev=F) - 1
+        }
+    
+    # Explained deviance:
+    d.square &lt;- function(obs, pred, family=&#39;binomial&#39;){
+        pred &lt;- ifelse(pred&lt;.00001,.00001,ifelse(pred&gt;.9999,.9999,pred))
+      
+        null_pred &lt;- rep(mean(obs), length(obs))
+        
+        1 - (calc.deviance(obs, pred, family=family) / 
+            calc.deviance(obs, null_pred, family=family))
+    }
+    
+    # Prepare data set to optimise threshold for binarising:
+    thresh_dat &lt;- data.frame(ID=seq_len(nrow(dat)), 
+        obs = dat[, colname_species],
+        pred = preds)
+        
+    # Find optimal threshold
+    thresh &lt;- optimal.thresholds(DATA= thresh_dat)
+    
+    # Prepare confusion matrix
+    cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[thresh$Method==thresh_method,2])
+    
+    # Output data frame with performance statistics and optimal threshold:
+    data.frame(AUC = PresenceAbsence::auc(thresh_dat, st.dev=F),
+        TSS = TSS(cmx_maxSSS), 
+        Sens = PresenceAbsence::sensitivity(cmx_maxSSS, st.dev=F),
+        Spec = PresenceAbsence::specificity(cmx_maxSSS, st.dev=F),
+        PCC = PresenceAbsence::pcc(cmx_maxSSS, st.dev=F), 
+        D2 = d.square(thresh_dat$obs, thresh_dat$pred),
+        thresh = thresh[thresh$Method==thresh_method,2])
+}</code></pre>
+<p>We can now use the functions above to automatise our model assessment for all models. First, we assess performance on training data:</p>
+<pre class="r"><code># Select which models, which we want to assess:
+our_models &lt;- c(&#39;m_bc&#39;, &#39;m_dom&#39;, &#39;m_glm&#39;, &#39;m_gam&#39;, &#39;m_cart&#39;, &#39;m_rf&#39;, &#39;m_brt&#39;, &#39;m_maxent&#39;)
+
+# Now we make predictions on training data:
+train_preds &lt;- sapply(our_models,   FUN=function(m){make.preds(eval(parse(text=m)), sp_thinned[, my_preds])})
+
+# Assess internal model performance:
+train_perf &lt;- data.frame(sapply(our_models,     FUN=function(x){calc.eval(sp_thinned, &#39;Turdus_torquatus&#39;, train_preds[,x])}))
+
+summary(train_preds)</code></pre>
+<pre><code>##       m_bc             m_dom             m_glm         
+##  Min.   :0.00000   Min.   :0.08658   Min.   :0.000839  
+##  1st Qu.:0.00000   1st Qu.:0.45914   1st Qu.:0.009624  
+##  Median :0.02667   Median :0.57340   Median :0.042567  
+##  Mean   :0.13493   Mean   :0.57015   Mean   :0.134409  
+##  3rd Qu.:0.18667   3rd Qu.:0.69343   3rd Qu.:0.166708  
+##  Max.   :0.93333   Max.   :0.79918   Max.   :0.934014  
+##      m_gam               m_cart             m_rf            m_brt        
+##  Min.   :0.0001229   Min.   :0.01254   Min.   :0.0000   Min.   :0.02717  
+##  1st Qu.:0.0040391   1st Qu.:0.01254   1st Qu.:0.0000   1st Qu.:0.02717  
+##  Median :0.0370343   Median :0.01254   Median :0.0040   Median :0.04555  
+##  Mean   :0.1344086   Mean   :0.13441   Mean   :0.1342   Mean   :0.13426  
+##  3rd Qu.:0.1872090   3rd Qu.:0.23944   3rd Qu.:0.1115   3rd Qu.:0.15103  
+##  Max.   :0.9346472   Max.   :0.90000   Max.   :0.9630   Max.   :0.67885  
+##     m_maxent        
+##  Min.   :0.0003578  
+##  1st Qu.:0.0096631  
+##  Median :0.0751157  
+##  Mean   :0.1991466  
+##  3rd Qu.:0.3332930  
+##  Max.   :0.9998280</code></pre>
+<pre class="r"><code>train_perf</code></pre>
+<pre><code>##             m_bc     m_dom     m_glm     m_gam    m_cart      m_rf
+## AUC    0.8321049 0.7860594 0.8983299 0.9020842 0.8976674         1
+## TSS    0.5853416 0.4807453 0.6635197 0.6800828 0.6954865         1
+## Sens        0.84 0.7333333 0.8933333 0.8933333 0.9066667         1
+## Spec   0.7453416  0.747412 0.7701863 0.7867495 0.7888199         1
+## PCC    0.7580645 0.7455197 0.7867384 0.8010753 0.8046595         1
+## D2     0.1580936 -1.003855 0.3525447 0.3748025 0.3929498 0.8131911
+## thresh      0.09      0.66      0.11      0.13     0.165     0.485
+##            m_brt  m_maxent
+## AUC    0.9150587 0.9023326
+## TSS    0.7028571 0.6814907
+## Sens   0.8933333 0.8533333
+## Spec   0.8095238 0.8281573
+## PCC    0.8207885 0.8315412
+## D2     0.3721822 0.3214855
+## thresh      0.09      0.31</code></pre>
+<p>Second, we assess performance on cross-validated data.</p>
+<pre class="r"><code># Make cross-validated predictions:
+crossval_preds &lt;- sapply(our_models,    FUN=function(m){crossval.preds(eval(parse(text=m)), traindat=sp_thinned, colname_species=&#39;Turdus_torquatus&#39;, colname_pred=my_preds, env_r=bio_curr, colname_coord=c(&#39;EASTING&#39;,&#39;NORTHING&#39;), kfold=5)})
+
+# Assess cross-validated model performance
+crossval_perf &lt;- data.frame(sapply(our_models, FUN=function(x){calc.eval(sp_thinned,&#39;Turdus_torquatus&#39;,crossval_preds[,x])}))
+  
+summary(crossval_preds)</code></pre>
+<pre><code>##       m_bc             m_dom             m_glm          
+##  Min.   :0.00000   Min.   :0.04164   Min.   :0.0003277  
+##  1st Qu.:0.00000   1st Qu.:0.44656   1st Qu.:0.0096535  
+##  Median :0.03333   Median :0.55717   Median :0.0441058  
+##  Mean   :0.13238   Mean   :0.55686   Mean   :0.1342200  
+##  3rd Qu.:0.16667   3rd Qu.:0.67860   3rd Qu.:0.1608294  
+##  Max.   :1.00000   Max.   :0.80079   Max.   :0.9384390  
+##      m_gam               m_cart             m_rf            m_brt        
+##  Min.   :0.0000575   Min.   :0.00000   Min.   :0.0000   Min.   :0.02614  
+##  1st Qu.:0.0038712   1st Qu.:0.01587   1st Qu.:0.0000   1st Qu.:0.02873  
+##  Median :0.0335087   Median :0.02405   Median :0.0040   Median :0.04308  
+##  Mean   :0.1333237   Mean   :0.13416   Mean   :0.1343   Mean   :0.13472  
+##  3rd Qu.:0.1926307   3rd Qu.:0.13115   3rd Qu.:0.1110   3rd Qu.:0.14717  
+##  Max.   :0.9255295   Max.   :0.88889   Max.   :0.9720   Max.   :0.72836  
+##     m_maxent       
+##  Min.   :0.000293  
+##  1st Qu.:0.010831  
+##  Median :0.068829  
+##  Mean   :0.200071  
+##  3rd Qu.:0.333527  
+##  Max.   :0.999689</code></pre>
+<pre class="r"><code>crossval_perf</code></pre>
+<pre><code>##              m_bc      m_dom     m_glm     m_gam     m_cart      m_rf
+## AUC     0.8201656  0.7762319 0.8915942 0.8868461  0.8070393         1
+## TSS     0.5326708  0.4775155 0.6596273 0.6602899  0.5489855         1
+## Sens    0.8266667  0.7466667 0.8666667 0.9066667  0.8533333         1
+## Spec    0.7060041  0.7308489 0.7929607 0.7536232  0.6956522         1
+## PCC     0.7222222  0.7329749 0.8028674 0.7741935  0.7168459         1
+## D2     0.02015514 -0.9500424  0.335039 0.3341982 0.09018688 0.8124072
+## thresh       0.08       0.64      0.13      0.11       0.05      0.48
+##            m_brt  m_maxent
+## AUC    0.8741201 0.8922291
+## TSS    0.6428157  0.656646
+## Sens   0.8933333 0.8533333
+## Spec   0.7494824 0.8033126
+## PCC    0.7688172 0.8100358
+## D2     0.2771514 0.2811083
+## thresh      0.07     0.265</code></pre>
+</div>
+</div>
+<div id="making-ensembles" class="section level1">
+<h1><span class="header-section-number">4</span> Making ensembles</h1>
+<p>We have gathered all information now that we need for making ensembles: model predictions, optimal thresholds for binary predictions, and evaluation statistics. The prediction could be combined into ensembles in different ways:<br />
+- mean of probabilities<br />
+- median of probabilities<br />
+- weighted mean of probabilities (weighted by model performance)<br />
+- committee averaging of binary predictions (what is the proportion of models predicting a presence?)</p>
+<pre class="r"><code># Mean of probabilities
+mean_prob &lt;- rowMeans(crossval_preds)
+
+# Median of probabilities
+median_prob &lt;- apply(crossval_preds, 1, median)
+
+# Weighted mean of probabilities, weighted by TSS
+wmean_prob &lt;- apply(crossval_preds, 1, weighted.mean, w=unlist(crossval_perf[&#39;TSS&#39;,]))
+
+# Committee averaging of binary predictions: calculates the proportion of models that predict the species to be present.
+committee_av &lt;- rowSums(sapply(our_models, FUN=function(x){ ifelse(crossval_preds[,x]&gt;=crossval_perf[&#39;thresh&#39;,x],1,0)} ))/length(our_models)
+
+# We can also calculate uncertainty measures, e.g. the standard deviation when making ensembles of mean probabilities.
+sd_prob &lt;- apply(crossval_preds, 1, sd)</code></pre>
+<p>Thus, ensembles can be easily constructed by hand. To make our live easier and automatise our workflow, we nevertheless put it into a function now:</p>
+<pre class="r"><code># Define a function for deriving ensembles:
+make.ensemble &lt;- function(preds, eval_metric, thresh){
+    # &quot;preds&quot; is a data.frame containing predictions for different algorithms.
+    # &quot;eval_metric&quot; is a vector with same length as number of columns in preds. It provides the evaluation metric used for weighting probabilities.
+    # &quot;thresh&quot; is a vector with same length as number of columns in preds. It provides the algorithm-specific threshold for making binary predictions.
+    
+    data.frame(mean_prob = rowMeans(preds),
+        median_prob = apply(preds,1,median),
+        wmean_prob = apply(preds,1,weighted.mean, w=eval_metric),
+        committee_av = rowSums(sapply(seq_len(ncol(preds)), FUN=function(x){
+            ifelse(preds[,x]&gt;=thresh[x],1,0)}))/ncol(preds),
+        sd_prob = apply(preds,1,sd))
+}</code></pre>
+<p>Now, we can simply apply this function to all our models of interest, make ensemble predictions and assess model performance.</p>
+<pre class="r"><code># Make ensemble predictions:
+ensemble_preds &lt;- make.ensemble(crossval_preds, unlist(crossval_perf[&#39;TSS&#39;,]), unlist(crossval_perf[&#39;thresh&#39;,]))
+    
+# Evaluate ensemble predictions:
+ensemble_perf &lt;- sapply(names(ensemble_preds)[1:4], FUN=function(x){calc.eval(sp_thinned, &#39;Turdus_torquatus&#39;, ensemble_preds[,x])})
+
+summary(ensemble_preds)</code></pre>
+<pre><code>##    mean_prob        median_prob          wmean_prob       committee_av  
+##  Min.   :0.01240   Min.   :0.0005153   Min.   :0.01071   Min.   :0.000  
+##  1st Qu.:0.06695   1st Qu.:0.0104904   1st Qu.:0.05181   1st Qu.:0.000  
+##  Median :0.10841   Median :0.0426865   Median :0.09140   Median :0.000  
+##  Mean   :0.19500   Mean   :0.1467957   Mean   :0.18130   Mean   :0.308  
+##  3rd Qu.:0.28787   3rd Qu.:0.2087142   3rd Qu.:0.27386   3rd Qu.:0.750  
+##  Max.   :0.73610   Max.   :0.9032223   Max.   :0.77061   Max.   :1.000  
+##     sd_prob       
+##  Min.   :0.01688  
+##  1st Qu.:0.15241  
+##  Median :0.18216  
+##  Mean   :0.18044  
+##  3rd Qu.:0.20782  
+##  Max.   :0.33322</code></pre>
+<pre class="r"><code>ensemble_perf</code></pre>
+<pre><code>##        mean_prob median_prob wmean_prob committee_av
+## AUC    0.9291097 0.9061974   0.9461974  0.9354589   
+## TSS    0.7499793 0.6826501   0.786087   0.694824    
+## Sens   0.9466667 0.84        0.96       0.8666667   
+## Spec   0.8033126 0.8426501   0.826087   0.8281573   
+## PCC    0.8225806 0.8422939   0.844086   0.8333333   
+## D2     0.3256305 0.3766665   0.3927788  -0.03531251 
+## thresh 0.21      0.21        0.21       0.685</code></pre>
+<div id="visualising-response-surfaces" class="section level2">
+<h2><span class="header-section-number">4.1</span> Visualising response surfaces</h2>
+<p>Let’s plot the response surfaces for the ensembles.</p>
+<pre class="r"><code>library(RColorBrewer)
+library(lattice)
+
+cls &lt;- colorRampPalette(rev(brewer.pal(11, &#39;RdYlBu&#39;)))(100)
+
+# We prepare our grid of environmental predictors:
+xyz &lt;- expand.grid(
+    seq(min(sp_thinned[,my_preds[1]]),max(sp_thinned[,my_preds[1]]),length=50),
+    seq(min(sp_thinned[,my_preds[2]]),max(sp_thinned[,my_preds[2]]),length=50))
+names(xyz) &lt;- my_preds
+
+# Make predictions of all models and make ensembles:
+xyz_preds &lt;- sapply(our_models,     FUN=function(m){make.preds(eval(parse(text=m)), xyz)})
+xyz_ensemble &lt;- make.ensemble(xyz_preds,    unlist(crossval_perf[&#39;TSS&#39;,]), unlist(crossval_perf[&#39;thresh&#39;,]))    
+
+# Plot ensemble of mean probabilities:
+xyz$z &lt;- xyz_ensemble[,&#39;mean_prob&#39;]
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Ensemble: mean prob&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code># Plot ensemble of median probabilities:
+xyz$z &lt;- xyz_ensemble[,&#39;median_prob&#39;]
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Ensemble: median prob&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-15-2.png" width="672" /></p>
+<pre class="r"><code># Plot ensemble of weighted mean probabilities:
+xyz$z &lt;- xyz_ensemble[,&#39;wmean_prob&#39;]
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Ensemble: weighted mean prob&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-15-3.png" width="672" /></p>
+<pre class="r"><code># Plot ensemble of committee average:
+xyz$z &lt;- xyz_ensemble[,&#39;committee_av&#39;]
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Ensemble: committee average&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-15-4.png" width="672" /></p>
+<pre class="r"><code># Plot standard deviation of mean probabilities. This gives us an indication where in environmental space we have highest uncertainty:
+xyz$z &lt;- xyz_ensemble[,&#39;sd_prob&#39;]
+wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Ensemble: sd&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-15-5.png" width="672" /></p>
+</div>
+<div id="mapping-ensemble-predictions" class="section level2">
+<h2><span class="header-section-number">4.2</span> Mapping ensemble predictions</h2>
+<p>Finally, let’s map the ensemble predictions.</p>
+<pre class="r"><code># Prepare data frame with environmental data
+UK_dat &lt;- data.frame(rasterToPoints(bio_curr[[my_preds]]))
+
+# We make predictions of all models:
+env_preds &lt;- data.frame(UK_dat[,1:2], sapply(our_models,    FUN=function(m){make.preds(eval(parse(text=m)), UK_dat )}))
+# We make ensembles:    
+env_ensemble &lt;- data.frame(UK_dat[,1:2], make.ensemble(env_preds[,-c(1:2)], unlist(crossval_perf[&#39;TSS&#39;,]), unlist(crossval_perf[&#39;thresh&#39;,])))
+
+# Make rasters from predictions and from ensemble predictions:
+r_preds &lt;- rasterFromXYZ(env_preds, crs=proj_UK)
+r_ens &lt;- rasterFromXYZ(env_ensemble, crs=proj_UK)
+
+spplot(r_preds)</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<pre class="r"><code>spplot(r_ens[[1:4]])</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-16-2.png" width="672" /></p>
+<p>Mapping the standard deviation of model predictions shows us the areas of highest deviation between model algorithms.</p>
+<pre class="r"><code>plot(r_ens[[&#39;sd_prob&#39;]])</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<p>We can also derive binary ensemble predictions. We have already estimated the optimal thresholds again when calculating the performance measures for the ensembles.</p>
+<pre class="r"><code># Binarise predictions of all algorithms
+env_preds_bin &lt;- data.frame(UK_dat[,1:2], sapply(our_models, FUN=function(x){ifelse(env_preds[,x]&gt;= unlist(crossval_perf[&#39;thresh&#39;,x]),1,0)}))
+  
+# Binatise ensemble predictions
+env_ensemble_bin &lt;- data.frame(UK_dat[,1:2], sapply(c(&#39;mean_prob&#39;, &#39;median_prob&#39;, &#39;wmean_prob&#39;), FUN=function(x){ifelse(env_ensemble[,x]&gt;= unlist(ensemble_perf[&#39;thresh&#39;,x]),1,0)}))
+
+# Make rasters:
+r_preds_bin &lt;- rasterFromXYZ(env_preds_bin, crs=proj_UK)
+r_ens_bin &lt;- rasterFromXYZ(env_ensemble_bin, crs=proj_UK)
+
+spplot(r_preds_bin)</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<pre class="r"><code>spplot(r_ens_bin)   </code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-18-2.png" width="672" /></p>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references">
+<div id="ref-araujo2007">
+<p>Araujo, Miguel B., and Mark New. 2007. “Ensemble Forecasting of Species Distributions.” <em>Trends in Ecology and Evolution</em> 22: 42–47.</p>
+</div>
+<div id="ref-Dormann2018a">
+<p>Dormann, Carsten F., Justin M. Calabrese, Gurutzeta Guillera-Arroita, Eleni Matechou, Volker Bahn, Kamil Barton, Colin M. Beale, et al. 2018. “Model Averaging in Ecology: A Review of Bayesian, Information-Theoretic, and Tactical Approaches for Predictive Inference.” <em>Ecological Monographs</em> 88 (4): 485–504. <a href="https://doi.org/10.1002/ecm.1309">https://doi.org/10.1002/ecm.1309</a>.</p>
+</div>
+<div id="ref-elith2006">
+<p>Elith, J., C. H. Graham, R. P. Anderson, M. Dudik, S. Ferrier, A. Guisan, R. J. Hijmans, et al. 2006. “Novel Methods Improve Prediction of Species’ Distribution from Occurence Data.” <em>Ecography</em> 29: 129–51.</p>
+</div>
+<div id="ref-Gillings2019">
+<p>Gillings, Simon, Dawn E. Balmer, Brian J. Caffrey, Iain S. Downie, David W. Gibbons, Peter C. Lack, James B. Reid, J. Tim R. Sharrock, Robert L. Swann, and Robert J. Fuller. 2019. “Breeding and Wintering Bird Distributions in Britain and Ireland from Citizen Science Bird Atlases.” <em>Global Ecology and Biogeography</em> 28 (7): 866–74. <a href="https://doi.org/10.1111/geb.12906">https://doi.org/10.1111/geb.12906</a>.</p>
+</div>
+<div id="ref-Guisan2017">
+<p>Guisan, A., W. Thuiller, and N. E. Zimmermann. 2017. <em>Habitat Suitability and Distribution Models with Applications in R</em>. Cambride University Press.</p>
+</div>
+<div id="ref-Thuiller2019">
+<p>Thuiller, W., M. Guéguen, J. Renaud, D. N. Karger, and N. E. Zimmermann. 2019. “Uncertainty in Ensembles of Global Biodiversity Scenarios.” <em>Nature Communications</em> 10: 1446.</p>
+</div>
+<div id="ref-Thuiller2009">
+<p>Thuiller, W., B. Lafourcade, R. Engler, and M. B. Araujo. 2009. “BIOMOD - a Platform for Ensemble Forecasting of Species Distributions.” <em>Ecography</em> 32: 369–73.</p>
+</div>
+<div id="ref-Vuuren2013">
+<p>Vuuren, Detlef P. van, and Timothy R. Carter. 2013. “Climate and Socio-Economic Scenarios for Climate Change Research and Assessment: Reconciling the New with the Old.” <em>Climatic Change</em> 122 (November): 415–29.</p>
+</div>
+</div>
+</div>
 
 <!DOCTYPE html>
 <html>
@@ -367,6 +943,8 @@ $(document).ready(function () {
 </html>
 
 
+</div>
+</div>
 
 </div>
 
@@ -399,6 +977,32 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
