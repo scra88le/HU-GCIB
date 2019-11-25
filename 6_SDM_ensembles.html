@@ -679,16 +679,16 @@ summary(train_preds)</code></pre>
 ##  3rd Qu.:0.18667   3rd Qu.:0.69343   3rd Qu.:0.166708  
 ##  Max.   :0.93333   Max.   :0.79918   Max.   :0.934014  
 ##      m_gam               m_cart             m_rf            m_brt        
-##  Min.   :0.0001229   Min.   :0.01254   Min.   :0.0000   Min.   :0.02717  
-##  1st Qu.:0.0040391   1st Qu.:0.01254   1st Qu.:0.0000   1st Qu.:0.02717  
-##  Median :0.0370343   Median :0.01254   Median :0.0040   Median :0.04555  
-##  Mean   :0.1344086   Mean   :0.13441   Mean   :0.1342   Mean   :0.13426  
-##  3rd Qu.:0.1872090   3rd Qu.:0.23944   3rd Qu.:0.1115   3rd Qu.:0.15103  
-##  Max.   :0.9346472   Max.   :0.90000   Max.   :0.9630   Max.   :0.67885  
+##  Min.   :0.0001229   Min.   :0.01254   Min.   :0.0000   Min.   :0.02521  
+##  1st Qu.:0.0040391   1st Qu.:0.01254   1st Qu.:0.0000   1st Qu.:0.02521  
+##  Median :0.0370343   Median :0.01254   Median :0.0040   Median :0.04276  
+##  Mean   :0.1344086   Mean   :0.13441   Mean   :0.1339   Mean   :0.13462  
+##  3rd Qu.:0.1872089   3rd Qu.:0.23944   3rd Qu.:0.1180   3rd Qu.:0.15411  
+##  Max.   :0.9346471   Max.   :0.90000   Max.   :0.9700   Max.   :0.69334  
 ##     m_maxent        
 ##  Min.   :0.0003578  
 ##  1st Qu.:0.0096631  
-##  Median :0.0751157  
+##  Median :0.0751158  
 ##  Mean   :0.1991466  
 ##  3rd Qu.:0.3332930  
 ##  Max.   :0.9998280</code></pre>
@@ -699,15 +699,15 @@ summary(train_preds)</code></pre>
 ## Sens        0.84 0.7333333 0.8933333 0.8933333 0.9066667         1
 ## Spec   0.7453416  0.747412 0.7701863 0.7867495 0.7888199         1
 ## PCC    0.7580645 0.7455197 0.7867384 0.8010753 0.8046595         1
-## D2     0.1580936 -1.003855 0.3525447 0.3748025 0.3929498 0.8131911
-## thresh      0.09      0.66      0.11      0.13     0.165     0.485
+## D2     0.1580936 -1.003855 0.3525447 0.3748025 0.3929498 0.8121605
+## thresh      0.09      0.66      0.11      0.13     0.165     0.465
 ##            m_brt  m_maxent
-## AUC    0.9150587 0.9023326
-## TSS    0.7028571 0.6814907
+## AUC    0.9168392 0.9023326
+## TSS    0.7049275 0.6814907
 ## Sens   0.8933333 0.8533333
-## Spec   0.8095238 0.8281573
-## PCC    0.8207885 0.8315412
-## D2     0.3721822 0.3214855
+## Spec   0.8115942 0.8281573
+## PCC    0.8225806 0.8315412
+## D2     0.3772473 0.3214855
 ## thresh      0.09      0.31</code></pre>
 <p>Second, we assess performance on cross-validated data.</p>
 <pre class="r"><code># Make cross-validated predictions:
@@ -717,44 +717,37 @@ crossval_preds &lt;- sapply(our_models,    FUN=function(m){crossval.preds(eval(p
 crossval_perf &lt;- data.frame(sapply(our_models, FUN=function(x){calc.eval(sp_thinned,&#39;Turdus_torquatus&#39;,crossval_preds[,x])}))
   
 summary(crossval_preds)</code></pre>
-<pre><code>##       m_bc             m_dom             m_glm          
-##  Min.   :0.00000   Min.   :0.04164   Min.   :0.0003277  
-##  1st Qu.:0.00000   1st Qu.:0.44656   1st Qu.:0.0096535  
-##  Median :0.03333   Median :0.55717   Median :0.0441058  
-##  Mean   :0.13238   Mean   :0.55686   Mean   :0.1342200  
-##  3rd Qu.:0.16667   3rd Qu.:0.67860   3rd Qu.:0.1608294  
-##  Max.   :1.00000   Max.   :0.80079   Max.   :0.9384390  
-##      m_gam               m_cart             m_rf            m_brt        
-##  Min.   :0.0000575   Min.   :0.00000   Min.   :0.0000   Min.   :0.02614  
-##  1st Qu.:0.0038712   1st Qu.:0.01587   1st Qu.:0.0000   1st Qu.:0.02873  
-##  Median :0.0335087   Median :0.02405   Median :0.0040   Median :0.04308  
-##  Mean   :0.1333237   Mean   :0.13416   Mean   :0.1343   Mean   :0.13472  
-##  3rd Qu.:0.1926307   3rd Qu.:0.13115   3rd Qu.:0.1110   3rd Qu.:0.14717  
-##  Max.   :0.9255295   Max.   :0.88889   Max.   :0.9720   Max.   :0.72836  
-##     m_maxent       
-##  Min.   :0.000293  
-##  1st Qu.:0.010831  
-##  Median :0.068829  
-##  Mean   :0.200071  
-##  3rd Qu.:0.333527  
-##  Max.   :0.999689</code></pre>
+<pre><code>##       m_bc             m_dom             m_glm              m_gam         
+##  Min.   :0.00000   Min.   :0.08485   Min.   :0.000650   Min.   :0.000093  
+##  1st Qu.:0.00000   1st Qu.:0.44321   1st Qu.:0.009868   1st Qu.:0.003783  
+##  Median :0.03333   Median :0.56705   Median :0.042180   Median :0.035002  
+##  Mean   :0.13280   Mean   :0.56117   Mean   :0.135773   Mean   :0.134861  
+##  3rd Qu.:0.16667   3rd Qu.:0.68575   3rd Qu.:0.172324   3rd Qu.:0.184280  
+##  Max.   :0.93333   Max.   :0.80835   Max.   :0.931675   Max.   :0.937813  
+##      m_cart             m_rf            m_brt            m_maxent        
+##  Min.   :0.00000   Min.   :0.0000   Min.   :0.02394   Min.   :0.0004593  
+##  1st Qu.:0.01190   1st Qu.:0.0000   1st Qu.:0.02715   1st Qu.:0.0114909  
+##  Median :0.01581   Median :0.0050   Median :0.04455   Median :0.0665295  
+##  Mean   :0.13260   Mean   :0.1342   Mean   :0.13373   Mean   :0.1980223  
+##  3rd Qu.:0.20833   3rd Qu.:0.1098   3rd Qu.:0.15768   3rd Qu.:0.3206567  
+##  Max.   :0.88889   Max.   :0.9710   Max.   :0.74891   Max.   :0.9999040</code></pre>
 <pre class="r"><code>crossval_perf</code></pre>
-<pre><code>##              m_bc      m_dom     m_glm     m_gam     m_cart      m_rf
-## AUC     0.8201656  0.7762319 0.8915942 0.8868461  0.8070393         1
-## TSS     0.5326708  0.4775155 0.6596273 0.6602899  0.5489855         1
-## Sens    0.8266667  0.7466667 0.8666667 0.9066667  0.8533333         1
-## Spec    0.7060041  0.7308489 0.7929607 0.7536232  0.6956522         1
-## PCC     0.7222222  0.7329749 0.8028674 0.7741935  0.7168459         1
-## D2     0.02015514 -0.9500424  0.335039 0.3341982 0.09018688 0.8124072
-## thresh       0.08       0.64      0.13      0.11       0.05      0.48
+<pre><code>##               m_bc      m_dom     m_glm     m_gam     m_cart      m_rf
+## AUC      0.8099793  0.7735818 0.8936094 0.8891373  0.7872878         1
+## TSS      0.5204969  0.4464596 0.6655901 0.6469565  0.6113458         1
+## Sens           0.8  0.7466667 0.8933333 0.8933333  0.8266667         1
+## Spec     0.7204969   0.699793 0.7722567 0.7536232  0.7846791         1
+## PCC      0.7311828  0.7060932 0.7885305 0.7724014  0.7903226         1
+## D2     -0.02810185 -0.9713565 0.3406979 0.3407686 0.04824155 0.8123784
+## thresh        0.08       0.63      0.11      0.11      0.135     0.465
 ##            m_brt  m_maxent
-## AUC    0.8741201 0.8922291
-## TSS    0.6428157  0.656646
-## Sens   0.8933333 0.8533333
-## Spec   0.7494824 0.8033126
-## PCC    0.7688172 0.8100358
-## D2     0.2771514 0.2811083
-## thresh      0.07     0.265</code></pre>
+## AUC    0.8729055 0.8915114
+## TSS    0.6267495 0.6720497
+## Sens        0.84 0.8666667
+## Spec   0.7867495  0.805383
+## PCC    0.7939068 0.8136201
+## D2      0.280715 0.2857033
+## thresh      0.09      0.27</code></pre>
 </div>
 </div>
 <div id="making-ensembles" class="section level1">
@@ -800,29 +793,29 @@ ensemble_preds &lt;- make.ensemble(crossval_preds, unlist(crossval_perf[&#39;TSS
 ensemble_perf &lt;- sapply(names(ensemble_preds)[1:4], FUN=function(x){calc.eval(sp_thinned, &#39;Turdus_torquatus&#39;, ensemble_preds[,x])})
 
 summary(ensemble_preds)</code></pre>
-<pre><code>##    mean_prob        median_prob          wmean_prob       committee_av  
-##  Min.   :0.01240   Min.   :0.0005153   Min.   :0.01071   Min.   :0.000  
-##  1st Qu.:0.06695   1st Qu.:0.0104904   1st Qu.:0.05181   1st Qu.:0.000  
-##  Median :0.10841   Median :0.0426865   Median :0.09140   Median :0.000  
-##  Mean   :0.19500   Mean   :0.1467957   Mean   :0.18130   Mean   :0.308  
-##  3rd Qu.:0.28787   3rd Qu.:0.2087142   3rd Qu.:0.27386   3rd Qu.:0.750  
-##  Max.   :0.73610   Max.   :0.9032223   Max.   :0.77061   Max.   :1.000  
+<pre><code>##    mean_prob        median_prob         wmean_prob       committee_av   
+##  Min.   :0.01739   Min.   :0.000694   Min.   :0.01389   Min.   :0.0000  
+##  1st Qu.:0.06592   1st Qu.:0.010388   1st Qu.:0.04886   1st Qu.:0.0000  
+##  Median :0.10754   Median :0.041320   Median :0.08568   Median :0.0000  
+##  Mean   :0.19539   Mean   :0.147002   Mean   :0.17909   Mean   :0.2968  
+##  3rd Qu.:0.28837   3rd Qu.:0.220147   3rd Qu.:0.27721   3rd Qu.:0.7500  
+##  Max.   :0.71810   Max.   :0.814678   Max.   :0.75988   Max.   :1.0000  
 ##     sd_prob       
-##  Min.   :0.01688  
-##  1st Qu.:0.15241  
-##  Median :0.18216  
-##  Mean   :0.18044  
-##  3rd Qu.:0.20782  
-##  Max.   :0.33322</code></pre>
+##  Min.   :0.02949  
+##  1st Qu.:0.15171  
+##  Median :0.18723  
+##  Mean   :0.18177  
+##  3rd Qu.:0.20845  
+##  Max.   :0.34161</code></pre>
 <pre class="r"><code>ensemble_perf</code></pre>
 <pre><code>##        mean_prob median_prob wmean_prob committee_av
-## AUC    0.9291097 0.9061974   0.9461974  0.9354589   
-## TSS    0.7499793 0.6826501   0.786087   0.694824    
-## Sens   0.9466667 0.84        0.96       0.8666667   
-## Spec   0.8033126 0.8426501   0.826087   0.8281573   
-## PCC    0.8225806 0.8422939   0.844086   0.8333333   
-## D2     0.3256305 0.3766665   0.3927788  -0.03531251 
-## thresh 0.21      0.21        0.21       0.685</code></pre>
+## AUC    0.9294962 0.9066943   0.9464458  0.9335542   
+## TSS    0.7396273 0.6913458   0.7840166  0.6752795   
+## Sens   0.9466667 0.9066667   0.96       0.8533333   
+## Spec   0.7929607 0.7846791   0.8240166  0.8219462   
+## PCC    0.8136201 0.8010753   0.8422939  0.8261649   
+## D2     0.3283978 0.3795954   0.4002493  -0.007735784
+## thresh 0.21      0.14        0.21       0.685</code></pre>
 <div id="visualising-response-surfaces" class="section level2">
 <h2><span class="header-section-number">4.1</span> Visualising response surfaces</h2>
 <p>Let’s plot the response surfaces for the ensembles.</p>
@@ -864,41 +857,50 @@ wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot
 </div>
 <div id="mapping-ensemble-predictions" class="section level2">
 <h2><span class="header-section-number">4.2</span> Mapping ensemble predictions</h2>
-<p>Finally, let’s map the ensemble predictions.</p>
+<p>Finally, let’s do some mapping. We first map the occurrence probabilities predicted by the different algorithms as well as the potential presences.</p>
 <pre class="r"><code># Prepare data frame with environmental data
 UK_dat &lt;- data.frame(rasterToPoints(bio_curr[[my_preds]]))
 
 # We make predictions of all models:
 env_preds &lt;- data.frame(UK_dat[,1:2], sapply(our_models,    FUN=function(m){make.preds(eval(parse(text=m)), UK_dat )}))
-# We make ensembles:    
-env_ensemble &lt;- data.frame(UK_dat[,1:2], make.ensemble(env_preds[,-c(1:2)], unlist(crossval_perf[&#39;TSS&#39;,]), unlist(crossval_perf[&#39;thresh&#39;,])))
 
-# Make rasters from predictions and from ensemble predictions:
+# Binarise predictions of all algorithms
+env_preds_bin &lt;- data.frame(UK_dat[,1:2], sapply(our_models, FUN=function(x){ifelse(env_preds[,x]&gt;= unlist(crossval_perf[&#39;thresh&#39;,x]),1,0)}))
+
+# Make rasters from predictions:
 r_preds &lt;- rasterFromXYZ(env_preds, crs=proj_UK)
-r_ens &lt;- rasterFromXYZ(env_ensemble, crs=proj_UK)
+r_preds_bin &lt;- rasterFromXYZ(env_preds_bin, crs=proj_UK)
 
+# Map predicted occurrence probabilities:
 spplot(r_preds)</code></pre>
 <p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
-<pre class="r"><code>spplot(r_ens[[1:4]])</code></pre>
+<pre class="r"><code># Map predicted presences:
+spplot(r_preds_bin)</code></pre>
 <p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-16-2.png" width="672" /></p>
-<p>Mapping the standard deviation of model predictions shows us the areas of highest deviation between model algorithms.</p>
-<pre class="r"><code>plot(r_ens[[&#39;sd_prob&#39;]])</code></pre>
+<p>Now, we map the ensemble predictions.</p>
+<pre class="r"><code># We make ensembles:    
+env_ensemble &lt;- data.frame(UK_dat[,1:2], make.ensemble(env_preds[,-c(1:2)], unlist(crossval_perf[&#39;TSS&#39;,]), unlist(crossval_perf[&#39;thresh&#39;,])))
+
+# Make rasters from ensemble predictions:
+r_ens &lt;- rasterFromXYZ(env_ensemble, crs=proj_UK)
+
+# Map continuous ensemble predictions:
+spplot(r_ens[[1:4]])</code></pre>
 <p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
-<p>We can also derive binary ensemble predictions. We have already estimated the optimal thresholds again when calculating the performance measures for the ensembles.</p>
-<pre class="r"><code># Binarise predictions of all algorithms
-env_preds_bin &lt;- data.frame(UK_dat[,1:2], sapply(our_models, FUN=function(x){ifelse(env_preds[,x]&gt;= unlist(crossval_perf[&#39;thresh&#39;,x]),1,0)}))
-  
-# Binatise ensemble predictions
+<p>Mapping the standard deviation of model predictions shows us the areas of highest deviation between model algorithms.</p>
+<pre class="r"><code># Map standard deviation across model algorithms:
+plot(r_ens[[&#39;sd_prob&#39;]])</code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<p>We can also derive binary ensemble predictions. We have already estimated the optimal thresholds when calculating the performance measures for the ensembles.</p>
+<pre class="r"><code># Binarise ensemble predictions
 env_ensemble_bin &lt;- data.frame(UK_dat[,1:2], sapply(c(&#39;mean_prob&#39;, &#39;median_prob&#39;, &#39;wmean_prob&#39;), FUN=function(x){ifelse(env_ensemble[,x]&gt;= unlist(ensemble_perf[&#39;thresh&#39;,x]),1,0)}))
 
 # Make rasters:
-r_preds_bin &lt;- rasterFromXYZ(env_preds_bin, crs=proj_UK)
 r_ens_bin &lt;- rasterFromXYZ(env_ensemble_bin, crs=proj_UK)
 
-spplot(r_preds_bin)</code></pre>
-<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
-<pre class="r"><code>spplot(r_ens_bin)   </code></pre>
-<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-18-2.png" width="672" /></p>
+# Map predicted presence from ensembles:
+spplot(r_ens_bin)   </code></pre>
+<p><img src="6_SDM_ensembles_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
 </div>
 </div>
 <div id="references" class="section level1 unnumbered">

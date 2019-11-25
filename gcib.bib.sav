@@ -901,7 +901,7 @@ biogeography.},
 }
 
 @Article{Dormann2018a,
-  author    = {Dormann, Carsten F. and Calabrese, Justin M. and Guillera-Arroita, Gurutzeta and Matechou, Eleni and Bahn, Volker and Barto, Kamil and Beale, Colin M. and Ciuti, Simone and Elith, Jane and Gerstner, Katharina and Guelat, Jérôme and Keil, Petr and Lahoz-Monfort, José J. and Pollock, Laura J. and Reineking, Björn and Roberts, David R. and Schröder, Boris and Thuiller, Wilfried and Warton, David I. and Wintle, Brendan A. and Wood, Simon N. and Wüest, Rafael O. and Hartig, Florian},
+  author    = {Dormann, Carsten F. and Calabrese, Justin M. and Guillera-Arroita, Gurutzeta and Matechou, Eleni and Bahn, Volker and Barton, Kamil and Beale, Colin M. and Ciuti, Simone and Elith, Jane and Gerstner, Katharina and Guelat, Jerome and Keil, Petr and Lahoz-Monfort, Jose J. and Pollock, Laura J. and Reineking, Bjoern and Roberts, David R. and Schroeder, Boris and Thuiller, Wilfried and Warton, David I. and Wintle, Brendan A. and Wood, Simon N. and Wueest, Rafael O. and Hartig, Florian},
   title     = {Model averaging in ecology: a review of Bayesian, information-theoretic, and tactical approaches for predictive inference},
   journal   = {Ecological Monographs},
   year      = {2018},
