@@ -384,9 +384,6 @@ div.tocify {
     <li>
       <a href="8_dispersal.html">8. Dispersal models</a>
     </li>
-    <li>
-      <a href="9_populations.html">9. Population dynamic models</a>
-    </li>
   </ul>
 </li>
       </ul>
@@ -625,39 +622,50 @@ redlist_threats &lt;- do.call(rbind,lapply(seq_len(length(spp)),FUN=function(i){
 </ul>
 <p>Here is an example of the kind of information in the table. For more details, please have a look at the IUCN website, e.g. the <a href="https://www.iucnredlist.org/species/22728432/132658315#conservation-actions">Balearic Shearwater</a> example, and at the <a href="https://www.iucnredlist.org/resources/threat-classification-scheme">Threat Classification Scheme</a>.</p>
 <pre class="r"><code>redlist_threats[sample(nrow(redlist_threats),10),-c(1:2)]</code></pre>
-<pre><code>##       code                                          title  timing
-## 11   5.4.4 Unintentional effects: (large scale) [harvest] Ongoing
-## 303  8.1.2             Named species (Ondatra zibethicus) Ongoing
-## 1232  11.4                              Storms &amp; flooding Ongoing
-## 740    4.2                        Utility &amp; service lines Ongoing
-## 987    3.3                               Renewable energy Ongoing
-## 342  9.2.1                                     Oil spills Ongoing
-## 1473   5.1         Hunting &amp; trapping terrestrial animals Ongoing
-## 719  5.1.1        Intentional use (species is the target) Ongoing
-## 107    5.4         Fishing &amp; harvesting aquatic resources Ongoing
-## 560    5.1         Hunting &amp; trapping terrestrial animals Ongoing
-##                  scope                         severity            score
-## 11     Minority (&lt;50%)              Negligible declines    Low Impact: 4
-## 303    Minority (&lt;50%)       Slow, Significant Declines    Low Impact: 5
-## 1232   Minority (&lt;50%)                   Rapid Declines Medium Impact: 6
-## 740    Minority (&lt;50%)              Negligible declines             &lt;NA&gt;
-## 987            Unknown                          Unknown          Unknown
-## 342  Majority (50-90%) Causing/Could cause fluctuations Medium Impact: 6
-## 1473   Minority (&lt;50%)              Negligible declines    Low Impact: 4
-## 719    Minority (&lt;50%)       Slow, Significant Declines    Low Impact: 5
-## 107  Majority (50-90%)       Slow, Significant Declines Medium Impact: 6
-## 560    Minority (&lt;50%)              Negligible declines    Low Impact: 4
-##                invasive
-## 11                 &lt;NA&gt;
-## 303  Ondatra zibethicus
-## 1232               &lt;NA&gt;
-## 740                &lt;NA&gt;
-## 987                &lt;NA&gt;
-## 342                &lt;NA&gt;
-## 1473               &lt;NA&gt;
-## 719                &lt;NA&gt;
-## 107                &lt;NA&gt;
-## 560                &lt;NA&gt;</code></pre>
+<pre><code>##       code
+## 532  7.1.1
+## 422  8.1.2
+## 301  8.1.2
+## 291    6.1
+## 1474 5.1.1
+## 963    6.1
+## 472  2.1.3
+## 341    9.2
+## 919    8.2
+## 832    8.1
+##                                                                   title
+## 532                                Increase in fire frequency/intensity
+## 422                                      Named species (Neovison vison)
+## 301                             Named species (Ctenopharyngodon idella)
+## 291                                             Recreational activities
+## 1474                            Intentional use (species is the target)
+## 963                                             Recreational activities
+## 472                                               Agro-industry farming
+## 341                                     Industrial &amp; military effluents
+## 919                   Problematic native species/diseases (Larus canus)
+## 832  Invasive non-native/alien species/diseases (Clostridium botulinum)
+##       timing             scope                         severity
+## 532  Ongoing Majority (50-90%)       Slow, Significant Declines
+## 422  Ongoing   Minority (&lt;50%)       Slow, Significant Declines
+## 301  Ongoing   Minority (&lt;50%) Causing/Could cause fluctuations
+## 291  Ongoing   Minority (&lt;50%)       Slow, Significant Declines
+## 1474 Ongoing   Minority (&lt;50%)              Negligible declines
+## 963  Ongoing Majority (50-90%)              Negligible declines
+## 472  Ongoing   Minority (&lt;50%)       Slow, Significant Declines
+## 341  Ongoing Majority (50-90%) Causing/Could cause fluctuations
+## 919  Ongoing   Minority (&lt;50%)       Slow, Significant Declines
+## 832   Future   Minority (&lt;50%)                   Rapid Declines
+##                 score                invasive
+## 532  Medium Impact: 6                    &lt;NA&gt;
+## 422     Low Impact: 5          Neovison vison
+## 301     Low Impact: 5 Ctenopharyngodon idella
+## 291     Low Impact: 5                    &lt;NA&gt;
+## 1474    Low Impact: 4                    &lt;NA&gt;
+## 963     Low Impact: 5                    &lt;NA&gt;
+## 472     Low Impact: 5                    &lt;NA&gt;
+## 341  Medium Impact: 6                    &lt;NA&gt;
+## 919     Low Impact: 5             Larus canus
+## 832     Low Impact: 4   Clostridium botulinum</code></pre>
 </div>
 <div id="tasks-iii" class="section level2">
 <h2><span class="header-section-number">2.4</span> Tasks III</h2>

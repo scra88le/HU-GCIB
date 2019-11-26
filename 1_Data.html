@@ -384,9 +384,6 @@ div.tocify {
     <li>
       <a href="8_dispersal.html">8. Dispersal models</a>
     </li>
-    <li>
-      <a href="9_populations.html">9. Population dynamic models</a>
-    </li>
   </ul>
 </li>
       </ul>
@@ -443,16 +440,16 @@ occ_count()</code></pre>
 <pre><code>## Registered S3 method overwritten by &#39;crul&#39;:
 ##   method                 from
 ##   as.character.form_file httr</code></pre>
-<pre><code>## [1] 1350001165</code></pre>
+<pre><code>## [1] 1354173407</code></pre>
 <pre class="r"><code># number of observations:
 occ_count(basisOfRecord=&#39;OBSERVATION&#39;)</code></pre>
-<pre><code>## [1] 19662024</code></pre>
+<pre><code>## [1] 19633469</code></pre>
 <pre class="r"><code># number of occurrences reported for Germany:
 occ_count(country=isocodes[grep(&quot;Germany&quot;, isocodes$name), &quot;code&quot;])</code></pre>
-<pre><code>## [1] 37843805</code></pre>
+<pre><code>## [1] 34906670</code></pre>
 <pre class="r"><code># number of observations reported for Germany:
 occ_count(country=isocodes[grep(&quot;Germany&quot;, isocodes$name), &quot;code&quot;],basisOfRecord=&#39;OBSERVATION&#39;)</code></pre>
-<pre><code>## [1] 299490</code></pre>
+<pre><code>## [1] 298003</code></pre>
 <p>As example, I picked the Alpine shrew (<em>Sorex alpinus</em>) for today, a small mammal species occurring in Central and Suuth-Eastern European mountain ranges. Its conservation status is near threatened (<a href="https://www.iucnredlist.org/species/29660/9514588">Link to IUCN redlist</a>).</p>
 <div class="figure">
 <img src="figures/shrew.png" alt="**Figure 1. The Alpine shrew (*Sorex alpinus*). Picture by Dr. Richard Kraft, downloaded from https://kleinsaeuger.at/sorex-alpinus.html.**" width="50%" />
@@ -475,7 +472,7 @@ library(maptools)</code></pre>
 <pre class="r"><code>data(wrld_simpl)
 plot(wrld_simpl,xlim=c(5,130), ylim=c(40,55))
 points(gbif_shrew$decimalLongitude, gbif_shrew$decimalLatitude, col=&#39;red&#39;,  pch=19)</code></pre>
-<p><img src="1_Data_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 </div>
 <div id="cleaning-and-cross-checking-gbif-data" class="section level3">
 <h3><span class="header-section-number">1.1.2</span> Cleaning and cross-checking gbif data</h3>
@@ -491,11 +488,11 @@ cl_gbif_shrew &lt;- clean_coordinates(gbif_shrew, lon=&quot;decimalLongitude&quo
 <pre><code>## Flagged 2 records.</code></pre>
 <pre><code>## Testing geographic outliers</code></pre>
 <pre><code>## Flagged 1 records.</code></pre>
-<pre><code>## Flagged 3 of 230 records, EQ = 0.01.</code></pre>
+<pre><code>## Flagged 3 of 232 records, EQ = 0.01.</code></pre>
 <pre class="r"><code>plot(wrld_simpl,xlim=c(5,130), ylim=c(40,55))
 points(gbif_shrew$decimalLongitude, gbif_shrew$decimalLatitude, col=&#39;red&#39;,  pch=19)
 points(gbif_shrew$decimalLongitude[cl_gbif_shrew$.summary], gbif_shrew$decimalLatitude[cl_gbif_shrew$.summary], col=&#39;blue&#39;,  pch=18)</code></pre>
-<p><img src="1_Data_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
 <pre class="r"><code>gbif_shrew &lt;- gbif_shrew[cl_gbif_shrew$.summary,]</code></pre>
 <p>Have a look at <span class="citation">Zizka et al. (2019)</span> and the examples by Robert Hijmans (<a href="https://rspatial.org/raster/sdm/2_sdm_occdata.html">http://rspatial.org</a>) for finding out about other typical problems with GBIF and how to deal with these. For example, how do we check for duplicates and how could we remove them?</p>
 <p>Finally, save your data, for example by writing the final data frame to file or by saving the R object(s).</p>
@@ -519,7 +516,8 @@ dir()</code></pre>
 ## [15] &quot;figures&quot;                &quot;files&quot;                 
 ## [17] &quot;GCIB-website.Rproj&quot;     &quot;gcib.bib&quot;              
 ## [19] &quot;gcib.bib.bak&quot;           &quot;gcib.bib.sav&quot;          
-## [21] &quot;index.Rmd&quot;              &quot;schedule.Rmd&quot;</code></pre>
+## [21] &quot;index.Rmd&quot;              &quot;schedule.Rmd&quot;          
+## [23] &quot;spatial_thin_log.txt&quot;</code></pre>
 <pre class="r"><code>dir(&#39;data&#39;)</code></pre>
 <pre><code>## character(0)</code></pre>
 <pre class="r"><code># Read in the shapefile (adjust the path to your folder structure!):
@@ -539,7 +537,7 @@ plot(iucn_shrew, col=&#39;blue&#39;, add=T)
 
 # Overlay the GBIF records:
 points(gbif_shrew$decimalLongitude, gbif_shrew$decimalLatitude, col=&#39;red&#39;,  pch=19)</code></pre>
-<p><img src="1_Data_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 <div id="rasterizing-range-maps" class="section level3">
 <h3><span class="header-section-number">1.2.1</span> Rasterizing range maps</h3>
 <p>For most applications in biodiversity modelling, we need to rasterize the polygons. The problem is that it is unclear at which spatial resolution the range maps accurately represent species occurrences. <span class="citation">Hurlbert and Jetz (2007)</span> and <span class="citation">Jetz, McPherson, and Guralnick (2012)</span> define the minimum spatial resolution as 100-200km (1-2°), although also resolutions of 50km (0.5°) and finer have been used <span class="citation">(Krosby et al. 2015)</span>.</p>
@@ -570,7 +568,7 @@ points(gbif_shrew$decimalLongitude, gbif_shrew$decimalLatitude, col=&#39;red&#39
 <pre class="r"><code>plot(wrld_simpl,xlim=c(5,30), ylim=c(40,55))
 plot(iucn_shrew, col=&#39;blue&#39;, add=T)
 plot(iucn_shrew_10min, add=T, alpha=0.6)</code></pre>
-<p><img src="1_Data_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
 <p>What rule is being used to determine whether polygon data is transferred to a raster cell? Check out the help page <code>?rasterize</code> to find out.</p>
 </div>
 <div id="calculating-range-size" class="section level3">
@@ -656,7 +654,7 @@ clim</code></pre>
 ## max values :   314,   211,    95, 22673,   489,   258,   725,   375,   364,   380,   289,  9916,  2088,   652,   261, ...</code></pre>
 <pre class="r"><code># Can you explain, what a raster stack is?
 plot(clim)</code></pre>
-<p><img src="1_Data_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<p><img src="1_Data_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
 <p>The <code>raster</code> package offers different functionalities manipulate the spatial data, for example aggregating the data to coarser resolutions (<code>aggregate</code>), cropping (<code>crop()</code>), stacking (<code>stack()</code>):</p>
 <pre class="r"><code>aggregate(clim[[1]], fact=6, fun=mean)</code></pre>
 <p>Instead of aggregating the bioclim layers, you can also download the “raw” data needed to calculate bioclimatic variables (prec, tmin, tmax), aggregate these to coarser resolution, and then re-calculate the bioclimatic variables. The latter can be done using the <code>biovars()</code> function in the <em>dismo</em> package.</p>
@@ -702,19 +700,19 @@ clim</code></pre>
 head(raster::extract(x = clim, 
     y = data.frame(gbif_shrew2[,c(&#39;decimalLongitude&#39;,&#39;decimalLatitude&#39;)])))</code></pre>
 <pre><code>##      bio1 bio2 bio3 bio4 bio5 bio6 bio7 bio8 bio9 bio10 bio11 bio12 bio13
-## [1,]   74   80   32 6125  209  -41  250  151   30   151    -5  1147   120
-## [2,]   47   94   33 6777  196  -88  284  132    1   132   -42  1495   183
+## [1,]   47   94   33 6777  196  -88  284  132    1   132   -42  1495   183
+## [2,]   74   80   32 6125  209  -41  250  151   30   151    -5  1147   120
 ## [3,]   14   64   28 5644  134  -90  224   85  -55    85   -55  1022   127
 ## [4,]   14   64   28 5644  134  -90  224   85  -55    85   -55  1022   127
 ## [5,]  -25   53   26 5181   78 -120  198   40  -86    41   -86  1464   162
-## [6,]   23   87   32 6300  163 -107  270  101  -52   101   -59  1054   141
+## [6,]   90   80   29 6907  237  -34  271  177   40   177    -1   573    69
 ##      bio14 bio15 bio16 bio17 bio18 bio19
-## [1,]    77    15   342   250   342   270
-## [2,]    89    26   529   293   529   324
+## [1,]    89    26   529   293   529   324
+## [2,]    77    15   342   250   342   270
 ## [3,]    52    28   355   169   355   169
 ## [4,]    52    28   355   169   355   169
 ## [5,]    96    17   464   310   429   320
-## [6,]    53    34   399   163   399   163</code></pre>
+## [6,]    34    22   189   109   189   126</code></pre>
 <pre class="r"><code># Our new data frame:
 gbif_shrew2 &lt;- cbind(gbif_shrew2, raster::extract(x = clim, y = data.frame(gbif_shrew2[,c(&#39;decimalLongitude&#39;,&#39;decimalLatitude&#39;)])))</code></pre>
 <p>We now have to inspect the data again to see whether we have any missing values or any other issues.</p>

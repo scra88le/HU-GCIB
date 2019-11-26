@@ -384,9 +384,6 @@ div.tocify {
     <li>
       <a href="8_dispersal.html">8. Dispersal models</a>
     </li>
-    <li>
-      <a href="9_populations.html">9. Population dynamic models</a>
-    </li>
   </ul>
 </li>
       </ul>
@@ -484,16 +481,16 @@ sp_temp &lt;- merge(sp_breed, subset(bird_coords,order==1&amp;resolution==10))
 xy &lt;- thin(sp_temp, lat.col=&#39;lat&#39;,long.col=&#39;long&#39;,spec.col=&#39;Turdus_torquatus&#39;, thin.par=20,reps=5, write.files=F,locs.thinned.list.return=T)</code></pre>
 <pre><code>## ********************************************** 
 ##  Beginning Spatial Thinning.
-##  Script Started at: Wed Nov 13 20:24:34 2019
+##  Script Started at: Tue Nov 26 08:30:49 2019
 ## lat.long.thin.count
-## 73 74 75 
-##  1  1  3 
-## [1] &quot;Maximum number of records after thinning: 75&quot;
-## [1] &quot;Number of data.frames with max records: 3&quot;
+## 72 73 74 
+##  2  1  2 
+## [1] &quot;Maximum number of records after thinning: 74&quot;
+## [1] &quot;Number of data.frames with max records: 2&quot;
 ## [1] &quot;No files written for this run.&quot;</code></pre>
 <pre class="r"><code># Which run yields the most presence records?
 which.max(sapply(xy,nrow))</code></pre>
-<pre><code>## [1] 2</code></pre>
+<pre><code>## [1] 1</code></pre>
 <pre class="r"><code># Thin the dataset:
 sp_thinned &lt;- merge(sp_temp,data.frame(long=xy[[which.max(sapply(xy,nrow))]]$Longitude, lat=xy[[which.max(sapply(xy,nrow))]]$Latitude),by=c(&#39;long&#39;,&#39;lat&#39;))[,c(&#39;grid&#39;,&#39;EASTING&#39;,&#39;NORTHING&#39;,&#39;Turdus_torquatus&#39;)]
 
@@ -515,11 +512,11 @@ abs_temp &lt;- merge(abs_temp, subset(bird_coords,order==1))
 xy &lt;- thin(abs_temp, lat.col=&#39;lat&#39;,long.col=&#39;long&#39;,spec.col=&#39;Turdus_torquatus&#39;, thin.par=20,reps=1, write.files=F,locs.thinned.list.return=T)[[1]]</code></pre>
 <pre><code>## ********************************************** 
 ##  Beginning Spatial Thinning.
-##  Script Started at: Wed Nov 13 20:24:36 2019
+##  Script Started at: Tue Nov 26 08:30:52 2019
 ## lat.long.thin.count
-## 507 
+## 514 
 ##   1 
-## [1] &quot;Maximum number of records after thinning: 507&quot;
+## [1] &quot;Maximum number of records after thinning: 514&quot;
 ## [1] &quot;Number of data.frames with max records: 1&quot;
 ## [1] &quot;No files written for this run.&quot;</code></pre>
 <pre class="r"><code># Thin the dataset:
@@ -604,7 +601,7 @@ cls &lt;- colorRampPalette(rev(brewer.pal(11, &#39;RdYlBu&#39;)))(100)
 library(lattice)
 wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;BIOCLIM&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
-<pre class="r"><code># Plot response curves:
+<pre class="r"><code># Plot partial response curves:
 par(mfrow=c(1,2)) 
 for (i in 1:2) {
   xz &lt;- data.frame(
@@ -646,17 +643,17 @@ thresh &lt;- optimal.thresholds(DATA= thresh_dat)
 cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
 
 pcc(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7580645</code></pre>
+<pre><code>## [1] 0.75</code></pre>
 <pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.84</code></pre>
+<pre><code>## [1] 0.8378378</code></pre>
 <pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7453416</code></pre>
+<pre><code>## [1] 0.7368421</code></pre>
 <pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
-<pre><code>## [1] 0.5853416</code></pre>
+<pre><code>## [1] 0.5746799</code></pre>
 <pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8321049</code></pre>
+<pre><code>## [1] 0.8254185</code></pre>
 <pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
-<pre><code>## [1] 0.1580936</code></pre>
+<pre><code>## [1] 0.1442497</code></pre>
 <p>Finally, let’s map the predicted occurrence probabilities across Britain and the predicted presence/absence.</p>
 <pre class="r"><code># Map predictions:
 r_bc_pred &lt;- r_bc_bin &lt;- predict(m_bc,bio_curr)
@@ -675,7 +672,7 @@ xyz$z &lt;- predict(m_dom, xyz)
 
 wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Domain&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
-<pre class="r"><code># Plot response curves:
+<pre class="r"><code># Plot partial response curves:
 par(mfrow=c(1,2)) 
 for (i in 1:2) {
   xz &lt;- data.frame(
@@ -698,17 +695,17 @@ thresh &lt;- optimal.thresholds(DATA= thresh_dat)
 cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
 
 pcc(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7455197</code></pre>
+<pre><code>## [1] 0.7341549</code></pre>
 <pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7333333</code></pre>
+<pre><code>## [1] 0.7162162</code></pre>
 <pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.747412</code></pre>
+<pre><code>## [1] 0.7368421</code></pre>
 <pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
-<pre><code>## [1] 0.4807453</code></pre>
+<pre><code>## [1] 0.4530583</code></pre>
 <pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7860594</code></pre>
+<pre><code>## [1] 0.7846592</code></pre>
 <pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
-<pre><code>## [1] -1.003855</code></pre>
+<pre><code>## [1] -1.024274</code></pre>
 <pre class="r"><code># Map predictions:
 r_dom_pred &lt;- r_dom_bin &lt;- predict(m_dom,bio_curr[[my_preds]])
 values(r_dom_bin) &lt;- ifelse(values(r_dom_pred)&gt;=thresh[3,2], 1, 0)
@@ -725,24 +722,24 @@ plot(stack(r_dom_pred, r_dom_bin),main=c(&#39;Domain prob.&#39;,&#39;Domain bin.
 m_glm &lt;- step(glm( as.formula(
         paste(&#39;Turdus_torquatus ~&#39;,paste(my_preds,paste0(&#39;+ I(&#39;,my_preds,&#39;^2)&#39;),collapse=&#39; + &#39;))),
     family=&#39;binomial&#39;, data=sp_thinned))</code></pre>
-<pre><code>## Start:  AIC=293.97
+<pre><code>## Start:  AIC=294.78
 ## Turdus_torquatus ~ bio11 + I(bio11^2) + bio17 + I(bio17^2)
 ## 
 ##              Df Deviance    AIC
-## - I(bio11^2)  1   285.18 293.18
-## &lt;none&gt;            283.97 293.97
-## - bio11       1   287.08 295.08
-## - I(bio17^2)  1   295.47 303.47
-## - bio17       1   298.40 306.40
+## - I(bio11^2)  1   285.25 293.25
+## &lt;none&gt;            284.78 294.78
+## - bio11       1   289.41 297.41
+## - I(bio17^2)  1   300.06 308.06
+## - bio17       1   303.27 311.27
 ## 
-## Step:  AIC=293.18
+## Step:  AIC=293.25
 ## Turdus_torquatus ~ bio11 + bio17 + I(bio17^2)
 ## 
 ##              Df Deviance    AIC
-## &lt;none&gt;            285.18 293.18
-## - I(bio17^2)  1   297.20 303.20
-## - bio17       1   300.36 306.36
-## - bio11       1   349.68 355.68</code></pre>
+## &lt;none&gt;            285.25 293.25
+## - I(bio17^2)  1   301.24 307.24
+## - bio17       1   304.69 310.69
+## - bio11       1   347.16 353.16</code></pre>
 <pre class="r"><code>summary(m_glm)</code></pre>
 <pre><code>## 
 ## Call:
@@ -750,23 +747,23 @@ m_glm &lt;- step(glm( as.formula(
 ##     family = &quot;binomial&quot;, data = sp_thinned)
 ## 
 ## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -1.9563  -0.4205  -0.1979  -0.1002   2.8088  
+##      Min        1Q    Median        3Q       Max  
+## -1.93427  -0.42588  -0.18586  -0.09024   2.79266  
 ## 
 ## Coefficients:
 ##               Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept) -1.284e+01  3.671e+00  -3.497 0.000470 ***
-## bio11       -9.533e-02  1.358e-02  -7.023 2.18e-12 ***
-## bio17        1.139e-01  3.235e-02   3.520 0.000432 ***
-## I(bio17^2)  -2.258e-04  7.047e-05  -3.205 0.001352 ** 
+## (Intercept) -1.527e+01  3.941e+00  -3.875 0.000107 ***
+## bio11       -9.234e-02  1.339e-02  -6.895 5.38e-12 ***
+## bio17        1.360e-01  3.494e-02   3.892 9.95e-05 ***
+## I(bio17^2)  -2.761e-04  7.630e-05  -3.619 0.000296 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 440.47  on 557  degrees of freedom
-## Residual deviance: 285.18  on 554  degrees of freedom
-## AIC: 293.18
+##     Null deviance: 439.54  on 567  degrees of freedom
+## Residual deviance: 285.25  on 564  degrees of freedom
+## AIC: 293.25
 ## 
 ## Number of Fisher Scoring iterations: 7</code></pre>
 <pre class="r"><code># Now, we plot the response surface:
@@ -774,7 +771,7 @@ xyz$z &lt;- predict(m_glm, xyz, type=&#39;response&#39;)
 
 wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;GLM&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
-<pre class="r"><code># Plot response curves:
+<pre class="r"><code># Plot partial response curves:
 par(mfrow=c(1,2)) 
 for (i in 1:2) {
   xz &lt;- data.frame(
@@ -797,17 +794,17 @@ thresh &lt;- optimal.thresholds(DATA= thresh_dat)
 cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
 
 pcc(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7867384</code></pre>
+<pre><code>## [1] 0.7658451</code></pre>
 <pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8933333</code></pre>
+<pre><code>## [1] 0.9189189</code></pre>
 <pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7701863</code></pre>
+<pre><code>## [1] 0.742915</code></pre>
 <pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
-<pre><code>## [1] 0.6635197</code></pre>
+<pre><code>## [1] 0.6618339</code></pre>
 <pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8983299</code></pre>
+<pre><code>## [1] 0.8965423</code></pre>
 <pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
-<pre><code>## [1] 0.3525447</code></pre>
+<pre><code>## [1] 0.3510327</code></pre>
 <pre class="r"><code># Map predictions:
 UK_dat &lt;- data.frame(rasterToPoints(bio_curr[[my_preds]]))
 r_glm_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict(m_glm, UK_dat, type=&#39;response&#39;)))
@@ -837,7 +834,7 @@ wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot
 <pre class="r"><code>xyz$z &lt;- predict(m_gamL, xyz[,1:2], type=&#39;response&#39;)
 wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;GAM (loess)&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-17-2.png" width="672" /></p>
-<pre class="r"><code># Plot response curves:
+<pre class="r"><code># Plot partial response curves:
 par(mfrow=c(1,2)) 
 for (i in 1:2) {
   xz &lt;- data.frame(
@@ -864,17 +861,17 @@ thresh &lt;- optimal.thresholds(DATA= thresh_dat)
 cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
 
 pcc(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8010753</code></pre>
+<pre><code>## [1] 0.7605634</code></pre>
 <pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8933333</code></pre>
+<pre><code>## [1] 0.9324324</code></pre>
 <pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7867495</code></pre>
+<pre><code>## [1] 0.7348178</code></pre>
 <pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
-<pre><code>## [1] 0.6800828</code></pre>
+<pre><code>## [1] 0.6672502</code></pre>
 <pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
-<pre><code>## [1] 0.9020842</code></pre>
+<pre><code>## [1] 0.8991958</code></pre>
 <pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
-<pre><code>## [1] 0.3748025</code></pre>
+<pre><code>## [1] 0.3668295</code></pre>
 <pre class="r"><code># Map predictions:
 r_gamS_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict(m_gamS, UK_dat, type=&#39;response&#39;)))
 r_gamS_bin &lt;- r_gamS_pred
@@ -906,26 +903,24 @@ m_cart &lt;- rpart( as.formula(
     
 # Have a look at the data splits:
 print(m_cart)</code></pre>
-<pre><code>## n= 558 
+<pre><code>## n= 568 
 ## 
 ## node), split, n, deviance, yval
 ##       * denotes terminal node
 ## 
-##  1) root 558 64.919350 0.13440860  
-##    2) bio11&gt;=21.68191 449 21.821830 0.05122494  
-##      4) bio17&lt; 190.4548 319  3.949843 0.01253918 *
-##      5) bio17&gt;=190.4548 130 16.223080 0.14615380  
-##       10) bio11&gt;=34.28561 59  1.932203 0.03389831 *
-##       11) bio11&lt; 34.28561 71 12.929580 0.23943660 *
-##    3) bio11&lt; 21.68191 109 27.192660 0.47706420  
-##      6) bio11&gt;=-0.5340128 99 24.323230 0.43434340  
-##       12) bio17&lt; 173.5085 10  0.900000 0.10000000 *
-##       13) bio17&gt;=173.5085 89 22.179780 0.47191010  
-##         26) bio11&gt;=12.96999 54 12.833330 0.38888890  
-##           52) bio11&lt; 20.78256 47 10.553190 0.34042550 *
-##           53) bio11&gt;=20.78256 7  1.428571 0.71428570 *
-##         27) bio11&lt; 12.96999 35  8.400000 0.60000000 *
-##      7) bio11&lt; -0.5340128 10  0.900000 0.90000000 *</code></pre>
+##  1) root 568 64.359150 0.13028170  
+##    2) bio11&gt;=21.40698 463 22.755940 0.05183585  
+##      4) bio17&lt; 190.4548 334  3.952096 0.01197605 *
+##      5) bio17&gt;=190.4548 129 16.899220 0.15503880  
+##       10) bio11&gt;=35.04177 48  1.916667 0.04166667 *
+##       11) bio11&lt; 35.04177 81 14.000000 0.22222220 *
+##    3) bio11&lt; 21.40698 105 26.190480 0.47619050  
+##      6) bio11&gt;=-3.157289 97 23.814430 0.43298970  
+##       12) bio11&gt;=17.33921 34  7.058824 0.29411760 *
+##       13) bio11&lt; 17.33921 63 15.746030 0.50793650  
+##         26) bio17&lt; 188.7723 11  2.181818 0.27272730 *
+##         27) bio17&gt;=188.7723 52 12.826920 0.55769230 *
+##      7) bio11&lt; -3.157289 8  0.000000 1.00000000 *</code></pre>
 <pre class="r"><code>plot(m_cart, margin=0.1)
 text(m_cart, cex = 0.8)</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
@@ -933,7 +928,7 @@ text(m_cart, cex = 0.8)</code></pre>
 xyz$z &lt;- predict(m_cart, xyz)
 wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;CART&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-18-2.png" width="672" /></p>
-<pre class="r"><code># Plot response curves:
+<pre class="r"><code># Plot partial response curves:
 par(mfrow=c(1,2)) 
 for (i in 1:2) {
   xz &lt;- data.frame(
@@ -956,17 +951,17 @@ thresh &lt;- optimal.thresholds(DATA= thresh_dat)
 cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
 
 pcc(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8046595</code></pre>
+<pre><code>## [1] 0.7816901</code></pre>
 <pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.9066667</code></pre>
+<pre><code>## [1] 0.9189189</code></pre>
 <pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7888199</code></pre>
+<pre><code>## [1] 0.7611336</code></pre>
 <pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
-<pre><code>## [1] 0.6954865</code></pre>
+<pre><code>## [1] 0.6800525</code></pre>
 <pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8976674</code></pre>
+<pre><code>## [1] 0.8908114</code></pre>
 <pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
-<pre><code>## [1] 0.3929498</code></pre>
+<pre><code>## [1] 0.3828342</code></pre>
 <pre class="r"><code># Map predictions:
 r_cart_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict(m_cart, UK_dat)))
 r_cart_bin &lt;- r_cart_pred
@@ -992,24 +987,24 @@ m_rf &lt;- randomForest( x=sp_thinned[,my_preds], y=as.factor(sp_thinned$Turdus_
 # Variable importance:
 importance(m_rf,type=1)</code></pre>
 <pre><code>##       MeanDecreaseAccuracy
-## bio11          22.36634206
-## bio17          -0.03964315</code></pre>
+## bio11             26.76071
+## bio17             13.42305</code></pre>
 <pre class="r"><code>varImpPlot(m_rf)</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
 <pre class="r"><code># Look at single trees:
 head(getTree(m_rf,1,T))</code></pre>
 <pre><code>##   left daughter right daughter split var split point status prediction
-## 1             2              3     bio17  189.002919      1       &lt;NA&gt;
-## 2             4              5     bio11   25.686708      1       &lt;NA&gt;
-## 3             6              7     bio11    9.843306      1       &lt;NA&gt;
-## 4             8              9     bio17  173.350757      1       &lt;NA&gt;
-## 5             0              0      &lt;NA&gt;    0.000000     -1          0
-## 6            10             11     bio17  252.326090      1       &lt;NA&gt;</code></pre>
+## 1             2              3     bio11  26.0019367      1       &lt;NA&gt;
+## 2             4              5     bio17 209.0700069      1       &lt;NA&gt;
+## 3             6              7     bio17 201.9339160      1       &lt;NA&gt;
+## 4             8              9     bio11  -2.3971875      1       &lt;NA&gt;
+## 5            10             11     bio11  -0.1428436      1       &lt;NA&gt;
+## 6            12             13     bio11  26.5119974      1       &lt;NA&gt;</code></pre>
 <pre class="r"><code># Now, we plot the response surface:
 xyz$z &lt;- predict(m_rf, xyz, type=&#39;prob&#39;)[,2]
 wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Random Forest&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-19-2.png" width="672" /></p>
-<pre class="r"><code># Plot response curves:
+<pre class="r"><code># Plot partial response curves:
 par(mfrow=c(1,2)) 
 for (i in 1:2) {
   xz &lt;- data.frame(
@@ -1042,7 +1037,7 @@ pcc(cmx_maxSSS, st.dev=F)</code></pre>
 <pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
 <pre><code>## [1] 1</code></pre>
 <pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
-<pre><code>## [1] 0.8126504</code></pre>
+<pre><code>## [1] 0.8185528</code></pre>
 <pre class="r"><code># Map predictions:
 r_rf_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict(m_rf, UK_dat,type=&#39;prob&#39;)[,2]))
 r_rf_bin &lt;- r_rf_pred
@@ -1076,27 +1071,27 @@ m_brt &lt;- gbm.step(data = sp_thinned,
 ##  
 ## Performing cross-validation optimisation of a boosted regression tree model 
 ## for NA and using a family of bernoulli 
-## Using 558 observations and 2 predictors 
+## Using 568 observations and 2 predictors 
 ## creating 10 initial models of 50 trees 
 ## 
 ##  folds are stratified by prevalence 
-## total mean deviance =  0.7894 
+## total mean deviance =  0.7738 
 ## tolerance is fixed at  8e-04 
 ## now adding trees...</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
 <pre class="r"><code># Variable importance:
 m_brt$contributions</code></pre>
 <pre><code>##         var  rel.inf
-## bio11 bio11 77.97765
-## bio17 bio17 22.02235</code></pre>
+## bio11 bio11 77.10221
+## bio17 bio17 22.89779</code></pre>
 <pre class="r"><code># Interactions (not very meaningful here with only 2 predictors):
 gbm.interactions(m_brt)$interactions</code></pre>
 <pre><code>##       bio11 bio17
-## bio11     0 50.21
+## bio11     0 10.77
 ## bio17     0  0.00</code></pre>
 <pre class="r"><code>gbm.interactions(m_brt)$rank.list</code></pre>
 <pre><code>##   var1.index var1.names var2.index var2.names int.size
-## 1          2      bio17          1      bio11    50.21
+## 1          2      bio17          1      bio11    10.77
 ## 2          3       &lt;NA&gt;          0                0.00</code></pre>
 <pre class="r"><code># dismo provides some build-in functions for plotting response:
 gbm.plot(m_brt, n.plots=2, write.title = FALSE)</code></pre>
@@ -1107,7 +1102,7 @@ gbm.plot(m_brt, n.plots=2, write.title = FALSE)</code></pre>
 xyz$z &lt;- predict.gbm(m_brt, xyz, n.trees=m_brt$gbm.call$best.trees, type=&quot;response&quot;)
 wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Boosted regression trees&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-20-4.png" width="672" /></p>
-<pre class="r"><code># Plot response curves:
+<pre class="r"><code># Plot partial response curves:
 par(mfrow=c(1,2)) 
 for (i in 1:2) {
   xz &lt;- data.frame(
@@ -1130,17 +1125,17 @@ thresh &lt;- optimal.thresholds(DATA= thresh_dat)
 cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
 
 pcc(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7849462</code></pre>
+<pre><code>## [1] 0.7869718</code></pre>
 <pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.9466667</code></pre>
+<pre><code>## [1] 0.9324324</code></pre>
 <pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.7598344</code></pre>
+<pre><code>## [1] 0.7651822</code></pre>
 <pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
-<pre><code>## [1] 0.706501</code></pre>
+<pre><code>## [1] 0.6976146</code></pre>
 <pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
-<pre><code>## [1] 0.915873</code></pre>
+<pre><code>## [1] 0.9142959</code></pre>
 <pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
-<pre><code>## [1] 0.3751883</code></pre>
+<pre><code>## [1] 0.3697972</code></pre>
 <pre class="r"><code># Map predictions:
 r_brt_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict.gbm(m_brt, UK_dat,n.trees=m_brt$gbm.call$best.trees, type=&quot;response&quot;)))
 r_brt_bin &lt;- r_brt_pred
@@ -1163,7 +1158,7 @@ m_maxent &lt;- maxnet(p=sp_thinned$Turdus_torquatus, data=sp_thinned[,my_preds],
 xyz$z &lt;- predict(m_maxent, xyz, type=&quot;logistic&quot;)
 wireframe(z ~ bio11 + bio17, data = xyz, zlab = list(&quot;Occurrence prob.&quot;, rot=90), drape = TRUE, col.regions = cls, scales = list(arrows = FALSE), zlim = c(0, 1), main=&#39;Maxent&#39;, xlab=&#39;bio11&#39;, ylab=&#39;bio17&#39;, screen=list(z = -40, x = -70, y = 3))</code></pre>
 <p><img src="5_SDM_algorithms_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
-<pre class="r"><code># Now, we plot the response surface:
+<pre class="r"><code># Plot partial response curves:
 par(mfrow=c(1,2)) 
 for (i in 1:2) {
   xz &lt;- data.frame(
@@ -1186,17 +1181,17 @@ thresh &lt;- optimal.thresholds(DATA= thresh_dat)
 cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[3,2])
 
 pcc(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8315412</code></pre>
+<pre><code>## [1] 0.75</code></pre>
 <pre class="r"><code>sensitivity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8533333</code></pre>
+<pre><code>## [1] 0.9459459</code></pre>
 <pre class="r"><code>specificity(cmx_maxSSS, st.dev=F)</code></pre>
-<pre><code>## [1] 0.8281573</code></pre>
+<pre><code>## [1] 0.7206478</code></pre>
 <pre class="r"><code>TSS(cmx_maxSSS)</code></pre>
-<pre><code>## [1] 0.6814907</code></pre>
+<pre><code>## [1] 0.6665937</code></pre>
 <pre class="r"><code>auc(thresh_dat, st.dev=F)</code></pre>
-<pre><code>## [1] 0.9023326</code></pre>
+<pre><code>## [1] 0.8985392</code></pre>
 <pre class="r"><code>d.square(thresh_dat$obs, thresh_dat$pred)</code></pre>
-<pre><code>## [1] 0.3214855</code></pre>
+<pre><code>## [1] 0.2955841</code></pre>
 <pre class="r"><code># Map predictions:
 r_maxent_pred &lt;- rasterFromXYZ(cbind(UK_dat[,1:2],predict(m_maxent, UK_dat, type=&quot;logistic&quot;)))
 r_maxent_bin &lt;- r_maxent_pred
