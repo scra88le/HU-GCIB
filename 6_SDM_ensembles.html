@@ -622,15 +622,14 @@ calc.eval &lt;- function(dat, colname_species, preds, thresh_method=&#39;MaxSens
     require(PresenceAbsence)
     require(dismo)  
     
-    # Helper functions - we had defined them before in &quot;SDM_functions.r&quot;. However,
-    # if we want this code to be independent, we have to insert the functions here again.
-    # True Skill Statistic:
+    # Helper functions.
+    ## True Skill Statistic:
     TSS = function(cmx){
         PresenceAbsence::sensitivity(cmx, st.dev=F) + 
         PresenceAbsence::specificity(cmx, st.dev=F) - 1
         }
     
-    # Explained deviance:
+    ## Explained deviance - the function calc.deviance() is taken from the dismo package:
     d.square &lt;- function(obs, pred, family=&#39;binomial&#39;){
         pred &lt;- ifelse(pred&lt;.00001,.00001,ifelse(pred&gt;.9999,.9999,pred))
       
@@ -645,13 +644,13 @@ calc.eval &lt;- function(dat, colname_species, preds, thresh_method=&#39;MaxSens
         obs = dat[, colname_species],
         pred = preds)
         
-    # Find optimal threshold
+    # Find optimal threshold using the package PresenceAbsence
     thresh &lt;- optimal.thresholds(DATA= thresh_dat)
     
     # Prepare confusion matrix
     cmx_maxSSS &lt;- cmx(DATA= thresh_dat, threshold=thresh[thresh$Method==thresh_method,2])
     
-    # Output data frame with performance statistics and optimal threshold:
+    # Generate output data frame with performance statistics and optimal threshold:
     data.frame(AUC = PresenceAbsence::auc(thresh_dat, st.dev=F),
         TSS = TSS(cmx_maxSSS), 
         Sens = PresenceAbsence::sensitivity(cmx_maxSSS, st.dev=F),
@@ -671,44 +670,44 @@ train_preds &lt;- sapply(our_models,   FUN=function(m){make.preds(eval(parse(tex
 train_perf &lt;- data.frame(sapply(our_models,     FUN=function(x){calc.eval(sp_thinned, &#39;Turdus_torquatus&#39;, train_preds[,x])}))
 
 summary(train_preds)</code></pre>
-<pre><code>##       m_bc             m_dom             m_glm         
-##  Min.   :0.00000   Min.   :0.08658   Min.   :0.000839  
-##  1st Qu.:0.00000   1st Qu.:0.45914   1st Qu.:0.009624  
-##  Median :0.02667   Median :0.57340   Median :0.042567  
-##  Mean   :0.13493   Mean   :0.57015   Mean   :0.134409  
-##  3rd Qu.:0.18667   3rd Qu.:0.69343   3rd Qu.:0.166708  
-##  Max.   :0.93333   Max.   :0.79918   Max.   :0.934014  
+<pre><code>##       m_bc             m_dom             m_glm          
+##  Min.   :0.00000   Min.   :0.07513   Min.   :0.0005874  
+##  1st Qu.:0.00000   1st Qu.:0.44994   1st Qu.:0.0082396  
+##  Median :0.02703   Median :0.56788   Median :0.0378043  
+##  Mean   :0.13870   Mean   :0.56397   Mean   :0.1302817  
+##  3rd Qu.:0.18919   3rd Qu.:0.68547   3rd Qu.:0.1756485  
+##  Max.   :0.95946   Max.   :0.79613   Max.   :0.9303214  
 ##      m_gam               m_cart             m_rf            m_brt        
-##  Min.   :0.0001229   Min.   :0.01254   Min.   :0.0000   Min.   :0.02521  
-##  1st Qu.:0.0040391   1st Qu.:0.01254   1st Qu.:0.0000   1st Qu.:0.02521  
-##  Median :0.0370343   Median :0.01254   Median :0.0040   Median :0.04276  
-##  Mean   :0.1344086   Mean   :0.13441   Mean   :0.1339   Mean   :0.13462  
-##  3rd Qu.:0.1872089   3rd Qu.:0.23944   3rd Qu.:0.1180   3rd Qu.:0.15411  
-##  Max.   :0.9346471   Max.   :0.90000   Max.   :0.9700   Max.   :0.69334  
+##  Min.   :0.0001673   Min.   :0.01198   Min.   :0.0000   Min.   :0.02433  
+##  1st Qu.:0.0043023   1st Qu.:0.01198   1st Qu.:0.0000   1st Qu.:0.02441  
+##  Median :0.0334211   Median :0.01198   Median :0.0060   Median :0.03718  
+##  Mean   :0.1302817   Mean   :0.13028   Mean   :0.1291   Mean   :0.13019  
+##  3rd Qu.:0.1864933   3rd Qu.:0.22222   3rd Qu.:0.0940   3rd Qu.:0.14672  
+##  Max.   :0.9471463   Max.   :1.00000   Max.   :0.9770   Max.   :0.73167  
 ##     m_maxent        
-##  Min.   :0.0003578  
-##  1st Qu.:0.0096631  
-##  Median :0.0751158  
-##  Mean   :0.1991466  
-##  3rd Qu.:0.3332930  
-##  Max.   :0.9998280</code></pre>
+##  Min.   :0.0004054  
+##  1st Qu.:0.0107353  
+##  Median :0.0710889  
+##  Mean   :0.2048733  
+##  3rd Qu.:0.3566196  
+##  Max.   :0.9999931</code></pre>
 <pre class="r"><code>train_perf</code></pre>
 <pre><code>##             m_bc     m_dom     m_glm     m_gam    m_cart      m_rf
-## AUC    0.8321049 0.7860594 0.8983299 0.9020842 0.8976674         1
-## TSS    0.5853416 0.4807453 0.6635197 0.6800828 0.6954865         1
-## Sens        0.84 0.7333333 0.8933333 0.8933333 0.9066667         1
-## Spec   0.7453416  0.747412 0.7701863 0.7867495 0.7888199         1
-## PCC    0.7580645 0.7455197 0.7867384 0.8010753 0.8046595         1
-## D2     0.1580936 -1.003855 0.3525447 0.3748025 0.3929498 0.8121605
-## thresh      0.09      0.66      0.11      0.13     0.165     0.465
+## AUC    0.8254185 0.7846592 0.8965423 0.8991958 0.8908114         1
+## TSS    0.5746799 0.4530583 0.6618339 0.6672502 0.6800525         1
+## Sens   0.8378378 0.7162162 0.9189189 0.9324324 0.9189189         1
+## Spec   0.7368421 0.7368421  0.742915 0.7348178 0.7611336         1
+## PCC         0.75 0.7341549 0.7658451 0.7605634 0.7816901         1
+## D2     0.1442497 -1.024274 0.3510327 0.3668295 0.3828342 0.8170831
+## thresh      0.09      0.65       0.1       0.1     0.135      0.47
 ##            m_brt  m_maxent
-## AUC    0.9168392 0.9023326
-## TSS    0.7049275 0.6814907
-## Sens   0.8933333 0.8533333
-## Spec   0.8115942 0.8281573
-## PCC    0.8225806 0.8315412
-## D2     0.3772473 0.3214855
-## thresh      0.09      0.31</code></pre>
+## AUC    0.9145558 0.8985392
+## TSS    0.6955903 0.6665937
+## Sens   0.9324324 0.9459459
+## Spec   0.7631579 0.7206478
+## PCC    0.7852113      0.75
+## D2     0.3709422 0.2955842
+## thresh      0.09       0.2</code></pre>
 <p>Second, we assess performance on cross-validated data.</p>
 <pre class="r"><code># Make cross-validated predictions:
 crossval_preds &lt;- sapply(our_models,    FUN=function(m){crossval.preds(eval(parse(text=m)), traindat=sp_thinned, colname_species=&#39;Turdus_torquatus&#39;, colname_pred=my_preds, env_r=bio_curr, colname_coord=c(&#39;EASTING&#39;,&#39;NORTHING&#39;), kfold=5)})
@@ -717,37 +716,37 @@ crossval_preds &lt;- sapply(our_models,    FUN=function(m){crossval.preds(eval(p
 crossval_perf &lt;- data.frame(sapply(our_models, FUN=function(x){calc.eval(sp_thinned,&#39;Turdus_torquatus&#39;,crossval_preds[,x])}))
   
 summary(crossval_preds)</code></pre>
-<pre><code>##       m_bc             m_dom             m_glm              m_gam         
-##  Min.   :0.00000   Min.   :0.08485   Min.   :0.000650   Min.   :0.000093  
-##  1st Qu.:0.00000   1st Qu.:0.44321   1st Qu.:0.009868   1st Qu.:0.003783  
-##  Median :0.03333   Median :0.56705   Median :0.042180   Median :0.035002  
-##  Mean   :0.13280   Mean   :0.56117   Mean   :0.135773   Mean   :0.134861  
-##  3rd Qu.:0.16667   3rd Qu.:0.68575   3rd Qu.:0.172324   3rd Qu.:0.184280  
-##  Max.   :0.93333   Max.   :0.80835   Max.   :0.931675   Max.   :0.937813  
-##      m_cart             m_rf            m_brt            m_maxent        
-##  Min.   :0.00000   Min.   :0.0000   Min.   :0.02394   Min.   :0.0004593  
-##  1st Qu.:0.01190   1st Qu.:0.0000   1st Qu.:0.02715   1st Qu.:0.0114909  
-##  Median :0.01581   Median :0.0050   Median :0.04455   Median :0.0665295  
-##  Mean   :0.13260   Mean   :0.1342   Mean   :0.13373   Mean   :0.1980223  
-##  3rd Qu.:0.20833   3rd Qu.:0.1098   3rd Qu.:0.15768   3rd Qu.:0.3206567  
-##  Max.   :0.88889   Max.   :0.9710   Max.   :0.74891   Max.   :0.9999040</code></pre>
+<pre><code>##       m_bc            m_dom            m_glm               m_gam          
+##  Min.   :0.0000   Min.   :0.0000   Min.   :0.0004107   Min.   :0.0000784  
+##  1st Qu.:0.0000   1st Qu.:0.4436   1st Qu.:0.0086799   1st Qu.:0.0041149  
+##  Median :0.0339   Median :0.5481   Median :0.0366725   Median :0.0341637  
+##  Mean   :0.1364   Mean   :0.5544   Mean   :0.1309250   Mean   :0.1321909  
+##  3rd Qu.:0.2034   3rd Qu.:0.6767   3rd Qu.:0.1656460   3rd Qu.:0.1856440  
+##  Max.   :0.9492   Max.   :0.7994   Max.   :0.9335518   Max.   :0.9346109  
+##      m_cart              m_rf            m_brt            m_maxent        
+##  Min.   :0.000000   Min.   :0.0000   Min.   :0.02313   Min.   :0.0004741  
+##  1st Qu.:0.007752   1st Qu.:0.0000   1st Qu.:0.02520   1st Qu.:0.0122814  
+##  Median :0.017182   Median :0.0050   Median :0.04055   Median :0.0666811  
+##  Mean   :0.131703   Mean   :0.1301   Mean   :0.13004   Mean   :0.2041497  
+##  3rd Qu.:0.181818   3rd Qu.:0.1003   3rd Qu.:0.13956   3rd Qu.:0.3482860  
+##  Max.   :1.000000   Max.   :0.9830   Max.   :0.71797   Max.   :0.9999749</code></pre>
 <pre class="r"><code>crossval_perf</code></pre>
-<pre><code>##               m_bc      m_dom     m_glm     m_gam     m_cart      m_rf
-## AUC      0.8099793  0.7735818 0.8936094 0.8891373  0.7872878         1
-## TSS      0.5204969  0.4464596 0.6655901 0.6469565  0.6113458         1
-## Sens           0.8  0.7466667 0.8933333 0.8933333  0.8266667         1
-## Spec     0.7204969   0.699793 0.7722567 0.7536232  0.7846791         1
-## PCC      0.7311828  0.7060932 0.7885305 0.7724014  0.7903226         1
-## D2     -0.02810185 -0.9713565 0.3406979 0.3407686 0.04824155 0.8123784
-## thresh        0.08       0.63      0.11      0.11      0.135     0.465
+<pre><code>##               m_bc      m_dom     m_glm     m_gam      m_cart      m_rf
+## AUC      0.8049568  0.7739085 0.8903326 0.8877065   0.7907867         1
+## TSS      0.5275194  0.4665718  0.652369  0.642904   0.5638472         1
+## Sens     0.8918919  0.7297297 0.9054054 0.8918919   0.8108108         1
+## Spec     0.6356275  0.7368421 0.7469636 0.7510121   0.7530364         1
+## PCC      0.6690141  0.7359155 0.7676056 0.7693662   0.7605634         1
+## D2     -0.03222269 -0.9848168 0.3359779 0.3349827 -0.03884359 0.8165777
+## thresh        0.05       0.64       0.1      0.11       0.085     0.475
 ##            m_brt  m_maxent
-## AUC    0.8729055 0.8915114
-## TSS    0.6267495 0.6720497
-## Sens        0.84 0.8666667
-## Spec   0.7867495  0.805383
-## PCC    0.7939068 0.8136201
-## D2      0.280715 0.2857033
-## thresh      0.09      0.27</code></pre>
+## AUC    0.8571233 0.8913174
+## TSS    0.5773608 0.6557063
+## Sens   0.8243243 0.8783784
+## Spec   0.7530364 0.7773279
+## PCC    0.7623239  0.790493
+## D2     0.2441781 0.2707282
+## thresh       0.1      0.26</code></pre>
 </div>
 </div>
 <div id="making-ensembles" class="section level1">
@@ -793,29 +792,29 @@ ensemble_preds &lt;- make.ensemble(crossval_preds, unlist(crossval_perf[&#39;TSS
 ensemble_perf &lt;- sapply(names(ensemble_preds)[1:4], FUN=function(x){calc.eval(sp_thinned, &#39;Turdus_torquatus&#39;, ensemble_preds[,x])})
 
 summary(ensemble_preds)</code></pre>
-<pre><code>##    mean_prob        median_prob         wmean_prob       committee_av   
-##  Min.   :0.01739   Min.   :0.000694   Min.   :0.01389   Min.   :0.0000  
-##  1st Qu.:0.06592   1st Qu.:0.010388   1st Qu.:0.04886   1st Qu.:0.0000  
-##  Median :0.10754   Median :0.041320   Median :0.08568   Median :0.0000  
-##  Mean   :0.19539   Mean   :0.147002   Mean   :0.17909   Mean   :0.2968  
-##  3rd Qu.:0.28837   3rd Qu.:0.220147   3rd Qu.:0.27721   3rd Qu.:0.7500  
-##  Max.   :0.71810   Max.   :0.814678   Max.   :0.75988   Max.   :1.0000  
-##     sd_prob       
-##  Min.   :0.02949  
-##  1st Qu.:0.15171  
-##  Median :0.18723  
-##  Mean   :0.18177  
-##  3rd Qu.:0.20845  
-##  Max.   :0.34161</code></pre>
+<pre><code>##    mean_prob         median_prob          wmean_prob      
+##  Min.   :0.006933   Min.   :0.0005059   Min.   :0.006445  
+##  1st Qu.:0.064326   1st Qu.:0.0085644   1st Qu.:0.049312  
+##  Median :0.102086   Median :0.0366367   Median :0.083357  
+##  Mean   :0.193739   Mean   :0.1442361   Mean   :0.179763  
+##  3rd Qu.:0.286279   3rd Qu.:0.2100920   3rd Qu.:0.270436  
+##  Max.   :0.764860   Max.   :0.9169550   Max.   :0.802390  
+##   committee_av       sd_prob        
+##  Min.   :0.0000   Min.   :0.009632  
+##  1st Qu.:0.0000   1st Qu.:0.150434  
+##  Median :0.0000   Median :0.181295  
+##  Mean   :0.3136   Mean   :0.180454  
+##  3rd Qu.:0.8750   3rd Qu.:0.208804  
+##  Max.   :1.0000   Max.   :0.338490</code></pre>
 <pre class="r"><code>ensemble_perf</code></pre>
 <pre><code>##        mean_prob median_prob wmean_prob committee_av
-## AUC    0.9294962 0.9066943   0.9464458  0.9335542   
-## TSS    0.7396273 0.6913458   0.7840166  0.6752795   
-## Sens   0.9466667 0.9066667   0.96       0.8533333   
-## Spec   0.7929607 0.7846791   0.8240166  0.8219462   
-## PCC    0.8136201 0.8010753   0.8422939  0.8261649   
-## D2     0.3283978 0.3795954   0.4002493  -0.007735784
-## thresh 0.21      0.14        0.21       0.685</code></pre>
+## AUC    0.9261134 0.9038735   0.9456997  0.928589    
+## TSS    0.7178028 0.677317    0.7663858  0.6726119   
+## Sens   0.8918919 0.8918919   0.8918919  0.9054054   
+## Spec   0.8259109 0.7854251   0.8744939  0.7672065   
+## PCC    0.834507  0.7992958   0.8767606  0.7852113   
+## D2     0.3179446 0.3719992   0.3892453  -0.1536159  
+## thresh 0.27      0.15        0.29       0.56</code></pre>
 <div id="visualising-response-surfaces" class="section level2">
 <h2><span class="header-section-number">4.1</span> Visualising response surfaces</h2>
 <p>Let’s plot the response surfaces for the ensembles.</p>
