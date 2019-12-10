@@ -12,7 +12,7 @@
 
 
 
-<title>SDM conservation applications</title>
+<title>SDM example applications for conservation</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,6 +20,9 @@
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -251,6 +254,63 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -258,6 +318,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -314,9 +384,6 @@ $(document).ready(function () {
     <li>
       <a href="8_dispersal.html">8. Dispersal models</a>
     </li>
-    <li>
-      <a href="9_populations.html">9. Population dynamic models</a>
-    </li>
   </ul>
 </li>
       </ul>
@@ -348,12 +415,317 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">SDM conservation applications</h1>
+<h1 class="title toc-ignore">SDM example applications for conservation</h1>
 
 </div>
 
 
+<div id="introduction" class="section level1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p>Over the last weeks, we learned about the different modelling steps for species distribution modelling (SDMs) and different SDM algorithms. This was all very technical and kind of carried us a little away from the biodiversity data analyses of prac 2. Thus, the goal of today is to combine all the things we learned so far and actually tackle some questions in global change ecology.</p>
+<p>We will again work with the UK breeding bird data of the last weeks, fit SDMs for different species, analyse their species-environment relationships and the relative importance of climate vs. land cover variables, predict range shifts and shifts in species richness patterns under scenarios of global change, and assess high priority areas for conservation.</p>
+<p>In this prac, I will only provide the very essentials like some initial data wrangling while you will have to find your own solutions for the different research questions.</p>
+</div>
+<div id="data" class="section level1">
+<h1><span class="header-section-number">2</span> Data</h1>
+<div id="species-data" class="section level2">
+<h2><span class="header-section-number">2.1</span> Species data</h2>
+<p>As in the previous prac, we will work with dataset of British breeding and wintering birds <span class="citation">(Gillings et al. 2019)</span>. The data contain breeding bird records in 20-year cycles (1968-1972, 1988-1991, 2008-2011 and) wintering bird records in 30-year cycles (1981/1982-1983-1984, 2007/2008-2010/2011) at a 10 km spatial resolution throughout Britain, Ireland, the Isle of Man and the Channel Islands. The data are available through the British Trust of Ornithology (www.bto.org) and can be downloaded <a href="https://www.bto.org/sites/default/files/atlas_open_data_files.zip">here</a>. If you were following the previous practicals, you should have the data on your local machine (e.g. in <em>data</em> folder).</p>
+<p>Here, I show you an example how we can quickly make a data frame of all breeding occurrences of the different species, concentrating on the breeding period 2008-2011. In the example, I only consider breeding occurrences that were tagged as “Confirmed” treating all cells outside the confirmed breeding sites as absences. Then, I spatially thin the data to reduce problems with spatial autocorrelation. Of course, you can play around with the definition of presence vs. absence, and with the thinning procedure.</p>
+<p>We first read in the data.</p>
+<pre class="r"><code># We read in UK bird data (you may have to adapt the filepath)
+bird_dist &lt;- read.table(&#39;data/distributions.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
+bird_spp &lt;- read.table(&#39;data/species_lookup.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
+bird_coords &lt;- read.table(&#39;data/grid_square_coordinates_lookup.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
 
+grid_ref &lt;- read.table(&#39;data/UK_10km_gridref.csv&#39;,header=T,sep=&#39;,&#39;, stringsAsFactors = F)</code></pre>
+<p>Next, we reshape the data to a data frame with a row for each site and a columns for each species.</p>
+<pre class="r"><code># Prepare species data: we only consider records at the species level
+speccodes &lt;- subset(bird_spp, taxonomic_rank==&#39;Species&#39;)$speccode
+spp &lt;- subset(bird_spp, taxonomic_rank==&#39;Species&#39;)$scientific_name
+
+# Bird distribution records, considering only confirmed breeding occurrences for 2008-2011
+bird_dist &lt;- subset(bird_dist, period==&quot;2008-11&quot; &amp; resolution==10 &amp; season==&#39;B&#39; &amp; island==&#39;B&#39; &amp; status == &#39;Confirmed&#39; &amp; speccode %in% speccodes)
+
+# We make a data frame with sites in rows and species in columns
+spp_dat &lt;- reshape(data.frame(bird_dist[,3:4],sp=1),direction=&#39;wide&#39;,timevar = &#39;speccode&#39;,v.names=&#39;sp&#39;,idvar=&#39;grid&#39;,sep=&#39;_&#39;)
+spp_dat[is.na(spp_dat)] &lt;- 0
+spp_dat &lt;- merge(spp_dat,grid_ref)</code></pre>
+<p>Last, we thin the data to avoid problems with spatial autocorrelation in adjacent cells.</p>
+<pre class="r"><code>library(raster)
+library(dismo)
+
+# Coordinate reference for British national grid
+proj_UK &lt;- &#39;+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs&#39;
+
+# Make raster with spatial background of UK
+bg &lt;- rasterFromXYZ(data.frame(spp_dat[,c(&quot;EASTING&quot;,&#39;NORTHING&#39;)],bg=1),crs=proj_UK)
+
+# Thin coordinates for species data set and only keep species with at least 40 thinned presences:
+xy &lt;- gridSample(spp_dat[,c(&quot;EASTING&quot;,&#39;NORTHING&#39;)],aggregate(bg,2),chess=&#39;white&#39;)
+spp_thinned &lt;- merge(xy,spp_dat,by=c(&quot;EASTING&quot;,&#39;NORTHING&#39;))
+spp_min40 &lt;- names(which(colSums(spp_thinned[,-c(1:3)])&gt;40))
+spp_thinned &lt;- spp_thinned[c(&#39;grid&#39;,&#39;EASTING&#39;,&#39;NORTHING&#39;,spp_min40)]</code></pre>
+<p><img src="7_SDM_conservation_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+</div>
+<div id="climate-data" class="section level2">
+<h2><span class="header-section-number">2.2</span> Climate data</h2>
+<p>In the last practical, you also downloaded the climate data and we can now simply load it using the <code>raster</code> package. We take the background from the distribution data. Additionally, we can load future and past climate scenarios.</p>
+<pre class="r"><code># GET CURRENT CLIMATE DATA
+# Please note that you have to set download=T if you haven&#39;t downloaded the data before:
+bio_curr &lt;- getData(&#39;worldclim&#39;, var=&#39;bio&#39;, download=F, lon=-5, lat=55, res=5, path=my_filepath)
+
+# UK extent in lon/lat coordinates
+ext_uk &lt;- c(-12, 3, 48, 62)
+
+# Crop and reproject current climate
+bio_curr &lt;- crop(bio_curr, ext_uk)
+bio_curr &lt;- projectRaster(bio_curr, bg)
+bio_curr &lt;- resample(bio_curr, bg)
+bio_curr &lt;- mask(bio_curr, bg)
+
+#-------
+# GET FUTURE CLIMATE DATA
+# Please note that you have to set download=T if you haven&#39;t downloaded the data before:
+bio_fut &lt;- getData(&#39;CMIP5&#39;, var=&#39;bio&#39;, download=F, res=5, rcp=45, model=&#39;MC&#39;, year=50, path=my_filepath)
+
+# Crop and reproject future climate
+bio_fut &lt;- crop(bio_fut, ext_uk)
+bio_fut &lt;- projectRaster(bio_fut, bg)
+bio_fut &lt;- resample(bio_fut, bg)
+bio_fut &lt;- mask(bio_fut, bg)</code></pre>
+<p>Automatic raster download of past climate scenarios is not yet implemented in the <code>raster</code> package although available from the worlclim data base. We thus need to download the data ourselves.</p>
+<pre class="r"><code># GET PAST CLIMATE DATA OF THE LAST GLACIAL MAXIMUM
+
+download.file(url=&#39;http://biogeo.ucdavis.edu/data/climate/cmip5/lgm/mrlgmbi_5m.zip&#39;,destfile=paste0(my_filepath,&#39;/mrlgmbi_5m.zip&#39;), method=&#39;auto&#39;)
+unzip(zipfile=paste0(my_filepath,&#39;/mrlgmbi_5m.zip&#39;),exdir=paste0(my_filepath,&#39;/past&#39;))
+file_order &lt;- order(as.numeric(sub(&#39;.tif&#39;,&#39;&#39;,sub(&#39;mrlgmbi&#39;,&#39;&#39;,list.files(paste0(my_filepath,&#39;/past&#39;))))))</code></pre>
+<pre><code>##  [1] &quot;mrlgmbi1.tif&quot;  &quot;mrlgmbi2.tif&quot;  &quot;mrlgmbi3.tif&quot;  &quot;mrlgmbi4.tif&quot; 
+##  [5] &quot;mrlgmbi5.tif&quot;  &quot;mrlgmbi6.tif&quot;  &quot;mrlgmbi7.tif&quot;  &quot;mrlgmbi8.tif&quot; 
+##  [9] &quot;mrlgmbi9.tif&quot;  &quot;mrlgmbi10.tif&quot; &quot;mrlgmbi11.tif&quot; &quot;mrlgmbi12.tif&quot;
+## [13] &quot;mrlgmbi13.tif&quot; &quot;mrlgmbi14.tif&quot; &quot;mrlgmbi15.tif&quot; &quot;mrlgmbi16.tif&quot;
+## [17] &quot;mrlgmbi17.tif&quot; &quot;mrlgmbi18.tif&quot; &quot;mrlgmbi19.tif&quot;</code></pre>
+<pre class="r"><code>bio_past &lt;- stack(paste0(my_filepath,&#39;/past/&#39;,list.files(paste0(my_filepath,&#39;/past&#39;))[file_order]))
+
+# Crop and reproject past climate
+bio_past &lt;- crop(bio_past, ext_uk)
+bio_past &lt;- projectRaster(bio_past, bg)
+bio_past &lt;- resample(bio_past, bg)
+bio_past &lt;- mask(bio_past, bg)
+
+spplot(stack(bio_past[[1]],bio_curr[[1]],bio_fut[[1]])/10,names.attr=c(&#39;Bio1 - LGM&#39;,&#39;Bio1 - Current&#39;,&#39;Bio1 - 2050&#39;))</code></pre>
+<p><img src="7_SDM_conservation_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+</div>
+<div id="land-cover-data" class="section level2">
+<h2><span class="header-section-number">2.3</span> Land cover data</h2>
+<p>Additionally, we will consider land cover data today. Such data are available at 100 m resolution from the CORINE data set. Here, we will use the land cover maps from 2012, the <a href="https://land.copernicus.eu/pan-european/corine-land-cover/clc-2012">CLC2012</a>. The data are freely available but you have to register. (Humboldt participants can also download it from moodle.)</p>
+<pre class="r"><code># Get land cover key
+lc_key &lt;- read.table(&#39;data/clc2012_clc2006_v2018_20_raster100m/CLC2012_CLC2006_V2018_20.txt&#39;,sep=&#39;,&#39;)
+
+# Get land cover data
+lc100 &lt;- raster(&#39;data/clc2012_clc2006_v2018_20_raster100m/CLC2012_CLC2006_V2018_20.tif&#39;)
+
+# Crop to UK
+lc100 &lt;- crop(lc100, c(3e6,4e6,3e6,4.5e6))
+
+# Look at different land cover categories
+levels(lc100)</code></pre>
+<p>The raster contains the main land cover in 100 m cells. As the bird data are at 10 km resolution, we will aggregate the land cover data, calculating the proportional cover at 10 km. This could take some time. (Humboldt participants can also download it from moodle.)</p>
+<pre class="r"><code># Calculate the proportional cover for each land cover class and stack:
+for (i in seq_len(nrow(lc_key)-1)){
+  print(i)
+  temp_r &lt;- aggregate(lc100,100, fun=function(x,...){sum(x==lc_key[i,1])/100})
+  
+  if (i==1) {
+    lc &lt;- temp_r
+  } else {
+    lc &lt;- addLayer(lc, temp_r)
+  }
+}
+
+# Assign names of land cover classes:
+names(lc) &lt;- as.character(lc_key[1:44,6])
+
+# Reproject to UK national grid to be consistent with bird data:
+lc &lt;- projectRaster(lc, bg)
+lc &lt;- resample(lc, bg)
+lc &lt;- mask(lc,bg)
+
+# Save the raster:
+writeRaster(lc,file=&#39;data/lc_prop_10km.grd&#39;)</code></pre>
+<p><img src="7_SDM_conservation_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<p>As these land cover classes are quite detailed, we could also further aggregate them to broader classes.</p>
+<pre class="r"><code># Aggregate classes
+lc_agg &lt;- lc[[1]]+lc[[2]]               # Urban
+lc_agg &lt;- addLayer(lc_agg, lc[[3]])     # Industrial
+lc_agg &lt;- addLayer(lc_agg, lc[[4]]+lc[[5]]+lc[[6]])   # Transport
+lc_agg &lt;- addLayer(lc_agg, lc[[7]]+lc[[8]]+lc[[9]])   # Special urban
+lc_agg &lt;- addLayer(lc_agg, lc[[10]]+lc[[11]])   # Recreational
+lc_agg &lt;- addLayer(lc_agg, lc[[12]]+lc[[13]]+lc[[14]])  # Arable
+lc_agg &lt;- addLayer(lc_agg, lc[[15]]+lc[[16]]+lc[[17]])  # Orchards
+lc_agg &lt;- addLayer(lc_agg, lc[[18]]+lc[[21]]+lc[[22]]) # Pastures meadows
+lc_agg &lt;- addLayer(lc_agg, lc[[19]]+lc[[20]]) # Permanent crops
+lc_agg &lt;- addLayer(lc_agg, lc[[23]]+lc[[24]]+lc[[25]])  # Forests
+lc_agg &lt;- addLayer(lc_agg, lc[[26]]+lc[[27]]+lc[[28]]+lc[[29]]+lc[[30]]+lc[[32]]+lc[[33]]+lc[[35]]+lc[[36]]+lc[[37]]) # unproductive veg
+lc_agg &lt;- addLayer(lc_agg, lc[[31]]+lc[[39]]+lc[[38]]) # Bare
+lc_agg &lt;- addLayer(lc_agg, lc[[40]]+lc[[41]]+lc[[42]])  # water
+lc_agg &lt;- addLayer(lc_agg, lc[[43]]+lc[[44]]) # sea
+names(lc_agg) &lt;- c(&#39;urban&#39;,&#39;industrial&#39;,&#39;transport&#39;,&#39;special_urban&#39;,&#39;recreational&#39;,&#39;arable&#39;,&#39;orchards&#39;,&#39;pastures&#39;,&#39;permanent_crops&#39;,&#39;forests&#39;,&#39;unproductive&#39;,&#39;bare&#39;,&#39;water&#39;,&#39;sea&#39;)
+
+writeRaster(lc_agg,file=&#39;data/lc_agg_10km.grd&#39;)</code></pre>
+</div>
+<div id="join-species-and-environmental-data" class="section level2">
+<h2><span class="header-section-number">2.4</span> Join species and environmental data</h2>
+<p>Finally, we standardise the environmental data, and join them with the species data.</p>
+<pre class="r"><code># Standardise data
+bio_curr_std &lt;- scale(bio_curr)
+bio_fut_std &lt;- scale(bio_fut, 
+                     center=attributes(attributes(scale(bio_curr))$data@values)$&#39;scaled:center&#39;,
+                     scale=attributes(attributes(scale(bio_curr))$data@values)$&#39;scaled:scale&#39;)
+bio_past_std &lt;- scale(bio_past, 
+                      center=attributes(attributes(scale(bio_curr))$data@values)$&#39;scaled:center&#39;,
+                      scale=attributes(attributes(scale(bio_curr))$data@values)$&#39;scaled:scale&#39;)
+lc_std &lt;- scale(lc_agg)
+          
+# Join data
+spp_env &lt;- na.exclude(data.frame(
+  spp_thinned, 
+  extract(bio_curr_std,spp_thinned[,c(&#39;EASTING&#39;,&#39;NORTHING&#39;)]), 
+  extract(lc_std,spp_thinned[,c(&#39;EASTING&#39;,&#39;NORTHING&#39;)])
+  ))
+
+# Predictor names:
+pred_names &lt;- c(names(bio_curr),names(lc_agg))</code></pre>
+</div>
+</div>
+<div id="some-exemplary-models" class="section level1">
+<h1><span class="header-section-number">3</span> Some exemplary models</h1>
+<div id="model-fitting-and-assessment" class="section level2">
+<h2><span class="header-section-number">3.1</span> Model fitting and assessment</h2>
+<p>Now, we can start fitting models to the data and assess model performance. I will exemplarily show how to automatically fit generalised linear models (GLMs) for all species and assess performance using using cross-validation. The relevant codes can be found in practicals 4-6. I will use some self-defined function from the previous pracs. For this, please source the <code>select07()</code> function from <a href="3_SDM_intro.html#424_variable_selection:_removing_highly_correlated_variables">practical 3</a>, and the prediction and cross-validation functions from <a href="https://damariszurell.github.io/HU-GCIB/6_SDM_ensembles.html#32_automatising_model_assessment">practical 6</a>. Of course, you can also code this by hand.</p>
+<pre class="r"><code># Fit GLMs to all birds: first find most important, weakly correlated predictors, then estimate best model using stepwise variable selection
+
+spp_models &lt;- lapply(
+  # Run for each species:
+  spp_min40,FUN=function(sp){
+    
+    # Select most important, weakly correlated variables
+    selvar &lt;- select07(pred_names=pred_names, response_name=sp, data=spp_env,  threshold = 0.5)$pred_sel
+    
+    # Run stepwise GLM and store in output list
+    step(glm( as.formula(paste(sp,&#39;~&#39;,paste(selvar[1:4],&#39;+ I(&#39;,selvar[1:4],&#39;^2)&#39;,collapse=&#39; + &#39;))), family=&#39;binomial&#39;, data=spp_env),trace=0)
+})
+
+# Assign species names to models in list
+names(spp_models) &lt;- spp_min40
+
+#------
+
+# Make cross-validated predictions and ensembles:
+spp_crosspred &lt;- data.frame(sapply(
+  # Run for each species:
+  spp_min40, FUN=function(sp){ 
+    
+    # 5-fold cross-validation:
+    crossval.preds(spp_models[[sp]], traindat= spp_env, colname_species=sp, colname_pred=pred_names, env_r=bio_curr, colname_coord = c(&#39;EASTING&#39;,&#39;NORTHING&#39;), kfold=5)
+    }))
+
+#------
+
+# Evaluate model performance based on cross-validated predictions:
+spp_eval &lt;- sapply(
+  # Run for each species
+  spp_min40, FUN=function(sp){
+    calc.eval(spp_env, sp, spp_crosspred[,sp])
+    })</code></pre>
+<p>#—————</p>
+<pre class="r"><code>library(ggplot2)
+ggplot(rbind(data.frame(Performance=unlist(spp_eval[&#39;AUC&#39;,]),index=&#39;AUC&#39;),data.frame(Performance=unlist(spp_eval[&#39;TSS&#39;,]),index=&#39;TSS&#39;),data.frame(Performance=unlist(spp_eval[&#39;Sens&#39;,]),index=&#39;Sensitivity&#39;),data.frame(Performance=unlist(spp_eval[&#39;Spec&#39;,]),index=&#39;Specificity&#39;),data.frame(Performance=unlist(spp_eval[&#39;D2&#39;,]),index=&#39;D2&#39;)), aes(x=index,y=Performance)) + geom_boxplot()</code></pre>
+<p><img src="7_SDM_conservation_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+</div>
+<div id="prediction" class="section level2">
+<h2><span class="header-section-number">3.2</span> Prediction</h2>
+<p>Now, we can make predictions in space and time, and look at species range shifts or changes in species richness patterns - either for all species or for specific species groups, e.g. warblers or gulls.</p>
+<pre class="r"><code># All species remaining in our thinned data set:
+spp_codes &lt;- as.numeric(sub(&#39;sp.&#39;,&#39;&#39;,names(spp_thinned)[-c(1:3)]))
+head(subset(bird_spp,speccode %in% spp_codes))</code></pre>
+<pre><code>##    speccode        english_name           scientific_name taxonomic_rank
+## 6         6        Little Grebe    Tachybaptus ruficollis        Species
+## 7         7 Great Crested Grebe        Podiceps cristatus        Species
+## 12       12              Fulmar        Fulmarus glacialis        Species
+## 21       26           Cormorant       Phalacrocorax carbo        Species
+## 22       27                Shag Phalacrocorax aristotelis        Species
+## 33       39          Grey Heron             Ardea cinerea        Species</code></pre>
+<pre class="r"><code># Warblers have the species codes 389-424:
+warblers &lt;- names(spp_thinned)[-c(1:3)][spp_codes&gt;=389 &amp; spp_codes&lt;=424]
+
+# Gulls have the species codes 232-242:
+gulls &lt;- names(spp_thinned)[-c(1:3)][spp_codes&gt;=232 &amp; spp_codes&lt;=242]</code></pre>
+<pre class="r"><code># Prepare data frame with environmental data:
+UK_dat &lt;- merge(data.frame(rasterToPoints(bio_curr_std)),data.frame(rasterToPoints(lc_std)))
+
+# We make predictions for all species:
+env_preds &lt;- data.frame(UK_dat[,1:2], sapply(spp_min40, FUN=function(sp){make.preds(spp_models[[sp]], UK_dat )}))
+
+# Binarise predictions for all species:
+env_preds_bin &lt;- data.frame(UK_dat[,1:2], sapply(spp_min40, FUN=function(sp){ifelse(env_preds[,sp]&gt;= unlist(spp_eval[&#39;thresh&#39;,sp]),1,0)}))
+
+# Calculate species richness of warblers:
+# Sum predicted probabilities
+sum_prob_r &lt;- rasterFromXYZ(data.frame(env_preds[,1:2],rowSums(env_preds[,warblers])), crs=proj_UK)
+# Sum predicted presences
+sum_bin_r &lt;- rasterFromXYZ(data.frame(env_preds_bin[,1:2],rowSums(env_preds_bin[,warblers])), crs=proj_UK)
+
+# Plot species richness for warblers:
+spplot(stack(sum_prob_r,sum_bin_r),names.attr=c(&#39;Sum predicted probabilities&#39;,&#39;Sum predicted presences&#39;), main=&#39;Warblers&#39;)</code></pre>
+<p><img src="7_SDM_conservation_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<pre class="r"><code># Calculate species richness of gulls:
+# Sum predicted probabilities
+sum_prob_r &lt;- rasterFromXYZ(data.frame(env_preds[,1:2],rowSums(env_preds[,gulls])), crs=proj_UK)
+# Sum predicted presences
+sum_bin_r &lt;- rasterFromXYZ(data.frame(env_preds_bin[,1:2],rowSums(env_preds_bin[,gulls])), crs=proj_UK)
+
+# Plot species richness for gulls:
+spplot(stack(sum_prob_r,sum_bin_r),names.attr=c(&#39;Sum predicted probabilities&#39;,&#39;Sum predicted presences&#39;), main=&#39;Gulls&#39;)</code></pre>
+<p><img src="7_SDM_conservation_files/figure-html/unnamed-chunk-21-2.png" width="672" /></p>
+</div>
+</div>
+<div id="your-turn-example-applications" class="section level1">
+<h1><span class="header-section-number">4</span> Your turn: example applications</h1>
+<p>Here, I will only provide some teaser plots but without codes. It’s your task to work on these examples yourself.</p>
+<div id="change-in-species-richness" class="section level2">
+<h2><span class="header-section-number">4.1</span> Change in species richness</h2>
+<p>Pick a species group and analyse changes in species richness between current and future (or past) environmental conditions. Compare predictions from models (i) including climate and land use predictors and (ii) including climate only. What assumptions are being made when predicting these models into the future (or past)? <img src="7_SDM_conservation_files/figure-html/unnamed-chunk-22-1.png" width="672" /><img src="7_SDM_conservation_files/figure-html/unnamed-chunk-22-2.png" width="672" /></p>
+</div>
+<div id="change-in-species-range" class="section level2">
+<h2><span class="header-section-number">4.2</span> Change in species range</h2>
+<p>Pick a (few) species and analyse range changes between current and future (or past) environmental conditions. Specifically, identify areas where the species is loosing suitable habitat, where it could colonise newly suitable habitat and where habitat is predicted to remain stable. What is the size of area lost, area gained, and area remaining stable?</p>
+<p>In addition, compare species range change for:</p>
+<ul>
+<li>different model algorithms: where do model predictions differ most, where do you find highest uncertainty?</li>
+<li>different species: which species are most vulnerable to future climate change, or which species have undergone most significant range changes since LGM?</li>
+<li>models (i) including climate and land use predictors and (ii) including climate only: what assumptions are being made when predicting these models into the future (or past)?</li>
+</ul>
+<p><img src="7_SDM_conservation_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
+</div>
+<div id="prioritising-highly-suitable-area" class="section level2">
+<h2><span class="header-section-number">4.3</span> Prioritising highly suitable area</h2>
+<p>Imagine you want to prioritise areas for species conservation. A simple way forward is to prioritise a specific proportion of the highly suitable areas, e.g. 15%.</p>
+<p><img src="7_SDM_conservation_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<p>Now, you can compare prioritisation area across different algorithms, species and time slices.</p>
+<p>First, an example comparing predictions from GLM and BRT (cf. <a href="https://damariszurell.github.io/HU-GCIB/5_SDM_algorithms.html">Prac 5</a>). <img src="7_SDM_conservation_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+<p>Next, an example comparing different species of warblers. <img src="7_SDM_conservation_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
+<p>Last, an example comparing different time periods. <img src="7_SDM_conservation_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references">
+<div id="ref-Gillings2019">
+<p>Gillings, Simon, Dawn E. Balmer, Brian J. Caffrey, Iain S. Downie, David W. Gibbons, Peter C. Lack, James B. Reid, J. Tim R. Sharrock, Robert L. Swann, and Robert J. Fuller. 2019. “Breeding and Wintering Bird Distributions in Britain and Ireland from Citizen Science Bird Atlases.” <em>Global Ecology and Biogeography</em> 28 (7): 866–74. <a href="https://doi.org/10.1111/geb.12906">https://doi.org/10.1111/geb.12906</a>.</p>
+</div>
+</div>
+</div>
 
 <!DOCTYPE html>
 <html>
@@ -367,6 +739,8 @@ $(document).ready(function () {
 </html>
 
 
+</div>
+</div>
 
 </div>
 
@@ -399,6 +773,32 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
