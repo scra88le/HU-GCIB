@@ -20,9 +20,13 @@
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
 <link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
@@ -251,6 +255,63 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -258,6 +319,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -314,9 +385,6 @@ $(document).ready(function () {
     <li>
       <a href="8_dispersal.html">8. Dispersal models</a>
     </li>
-    <li>
-      <a href="9_populations.html">9. Population dynamic models</a>
-    </li>
   </ul>
 </li>
       </ul>
@@ -353,7 +421,348 @@ $(document).ready(function () {
 </div>
 
 
+<div id="introduction" class="section level1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p>Over the last weeks, we got to know the general SDM workflow including evaluation and prediction, different SDM algorithms and ensemble modelling <span class="citation">(Elith et al. 2006; Thuiller et al. 2009; Guisan, Thuiller, and Zimmermann 2017)</span>. With that, you should have a good overview how to work with SDMs in scientific and applied context. However, as we have discussed in class, global change induced range dynamics are affected by a number of processes including dispersal, demography and biotic interactions that are not explicitly accounted for in SDMs <span class="citation">(Urban et al. 2016; Zurell 2017)</span>. There are a number of ways to couple SDMs with models incorporating these additional processes with the simplest being to couple SDMs with dispersal models that describe if and how fast the species is able to colonise new areas <span class="citation">(Franklin 2010; Zurell et al. 2016)</span>. Today, we will work with such simple dispersal models that allow predicting large-scale colonisation dynamics, using the package <code>MigClim</code> <span class="citation">(Engler, Hordijk, and Guisan 2012)</span>.</p>
+</div>
+<div id="species-distribution-model" class="section level1">
+<h1><span class="header-section-number">2</span> Species distribution model</h1>
+<div id="species-data-and-environmental-data" class="section level2">
+<h2><span class="header-section-number">2.1</span> Species data and environmental data</h2>
+<p>As in the previous prac, we will work with the dataset of British breeding and wintering birds <span class="citation">(Gillings et al. 2019)</span>. The data contain breeding bird records in 20-year cycles (1968-1972, 1988-1991, 2008-2011 and) wintering bird records in 30-year cycles (1981/1982-1983-1984, 2007/2008-2010/2011) at a 10 km spatial resolution throughout Britain, Ireland, the Isle of Man and the Channel Islands. The data are available through the British Trust of Ornithology (www.bto.org) and can be downloaded <a href="https://www.bto.org/sites/default/files/atlas_open_data_files.zip">here</a>. If you were following the previous practicals, you should have the data on your local machine (e.g. in <em>data</em> folder).</p>
+<p>Last <a href="https://damariszurell.github.io/HU-GCIB/7_SDM_conservation.html">session</a>, we made a data frame of all breeding occurrences of the different species, concentrating on the breeding period 2008-2011. We considered only breeding occurrences that were tagged as “Confirmed” treating all cells outside the confirmed breeding sites as absences. Then, we spatially thinned the data to reduce problems with spatial autocorrelation.</p>
+<p>We prepared climate and CORINE land cover data as environmental predictors. Also, we downloaded future climate scenarios for 2050 and past climate scenarios for the last glacial maximum. Please follow instructions in <a href="https://damariszurell.github.io/HU-GCIB/7_SDM_conservation.html#2_data">section 2 of prac 7</a>.</p>
+</div>
+<div id="species-distribution-model-and-range-projections" class="section level2">
+<h2><span class="header-section-number">2.2</span> Species distribution model and range projections</h2>
+<p>Once all data were prepared, we fitted simple generalised linear models considering only the four most important, weakly correlated variables. I stored all the models and can easily read them back in. Alternatively, please follow instructions in <a href="https://damariszurell.github.io/HU-GCIB/7_SDM_conservation.html#3_some_exemplary_models">section 3 of prac 7</a>.</p>
+<pre class="r"><code># You may have to adapt the file path
+load(&#39;UK_spp_thinned_n40.RData&#39;)
+load(&#39;07_spp_models.RData&#39;)
+load(&#39;07_env_preds.RData&#39;)
 
+# Also, read in UK bird data
+bird_dist &lt;- read.table(&#39;data/distributions.csv&#39;,header=T, sep=&#39;,&#39;, stringsAsFactors = F)
+grid_ref &lt;- read.table(&#39;data/UK_10km_gridref.csv&#39;,header=T,sep=&#39;,&#39;, stringsAsFactors = F)</code></pre>
+<p>For this prac, we will concentrate on the current and future predicted range of the Marsh Tit. This species occurs in the South of Britain and is predicted to find newly suitable range area further North in 2050</p>
+<pre class="r"><code>library(raster)
+
+# UK background
+proj_UK &lt;- &#39;+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs&#39;
+bg &lt;- rasterFromXYZ(data.frame(env_preds[,1:2],bg=1),crs=proj_UK)
+
+# Extract marsh tit data
+marsh_tit &lt;- subset(bird_dist, period==&quot;2008-11&quot; &amp; resolution==10 &amp; season==&#39;B&#39; &amp; island==&#39;B&#39; &amp; status == &#39;Confirmed&#39; &amp; speccode==432)
+marsh_tit &lt;- merge(marsh_tit, grid_ref)
+
+# Make raster from marsh tit occurrences
+r_marsh_tit &lt;- rasterFromXYZ(data.frame(marsh_tit[,c(&#39;EASTING&#39;,&#39;NORTHING&#39;)],occ=1))
+r_marsh_tit &lt;- extend(r_marsh_tit, bg)
+values(r_marsh_tit)[!is.na(values(bg)) &amp; is.na(values(r_marsh_tit))] &lt;- 0
+
+par(mfrow=c(1,3))
+plot(r_marsh_tit,axes=F,legend=F,main=&#39;Marsh tit - atlas data&#39;)
+plot(rasterFromXYZ(data.frame(env_preds[,1:2],env_preds_bin[,&#39;sp_432&#39;])),axes=F,legend=F,main=&#39;Predictions - current&#39;)
+plot(rasterFromXYZ(data.frame(env_preds[,1:2],env_preds_fut_bin[,&#39;sp_432&#39;])),axes=F,legend=F,main=&#39;Prediction - 2050&#39;)</code></pre>
+<p><img src="8_dispersal_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+</div>
+<div id="time-series-of-habitat-suitability" class="section level2">
+<h2><span class="header-section-number">2.3</span> Time series of habitat suitability</h2>
+<p>Dispersal is typically modelled as a multi-step process meaning that we need a time series of habitat suitability. For simplicity, we assume that current climatic conditions relate to the year 2010 (as our species data stem from 2008-2011) climate change is linear between 2010 and 2050.</p>
+<p>Please source the prediction function from <a href="https://damariszurell.github.io/HU-GCIB/6_SDM_ensembles.html#32_automatising_model_assessment">practical 6</a> to run the following code.</p>
+<pre class="r"><code># GET CLIMATE DATA
+# Please note that you have to set download=T if you haven&#39;t downloaded the data before:
+bio_curr &lt;- getData(&#39;worldclim&#39;, var=&#39;bio&#39;, download=F, lon=-5, lat=55, res=5, path=my_filepath)
+
+# UK extent in lon/lat coordinates
+ext_uk &lt;- c(-12, 3, 48, 62)
+
+# Crop and reproject current climate
+bio_curr &lt;- crop(bio_curr, ext_uk)
+bio_curr &lt;- projectRaster(bio_curr, bg)
+bio_curr &lt;- resample(bio_curr, bg)
+bio_curr &lt;- mask(bio_curr, bg)
+
+#-------
+# GET FUTURE CLIMATE
+bio_fut &lt;- getData(&#39;CMIP5&#39;, var=&#39;bio&#39;, download=F, res=5, rcp=45, model=&#39;MC&#39;, year=50, path=my_filepath)
+
+# Crop and reproject future climate
+bio_fut &lt;- crop(bio_fut, ext_uk)
+bio_fut &lt;- projectRaster(bio_fut, bg)
+bio_fut &lt;- resample(bio_fut, bg)
+bio_fut &lt;- mask(bio_fut, bg)
+
+#--------
+# GET LAND USE DATA
+lc_agg &lt;- stack(paste0(data_path,&#39;lc_agg_10km.grd&#39;))
+
+
+#--------
+# Standardise data
+bio_curr_std &lt;- scale(bio_curr)
+bio_fut_std &lt;- scale(bio_fut, center=attributes(attributes(scale(bio_curr))$data@values)$&#39;scaled:center&#39;, scale=attributes(attributes(scale(bio_curr))$data@values)$&#39;scaled:scale&#39;)
+lc_std &lt;- scale(lc_agg)
+
+#-------
+# Make time series predictions with 1 year intervals
+
+bio_diff_1y &lt;- (bio_fut_std - bio_curr_std)/40
+UK_curr &lt;- merge(data.frame(rasterToPoints(bio_curr_std)),data.frame(rasterToPoints(lc_std)))
+
+pred_timeseries &lt;- sapply(0:40,FUN=function(year){
+  if (year==0) {
+    pred &lt;- make.preds(spp_models[[&#39;sp_432&#39;]], UK_curr )
+    } else
+  {
+    bio_fut_temp &lt;- bio_curr_std + (bio_diff_1y * year)
+    UK_fut &lt;- merge(data.frame(rasterToPoints(bio_fut_temp)),data.frame(rasterToPoints(lc_std)))
+    names(UK_fut) &lt;- names(UK_curr)  
+    pred &lt;- make.preds(spp_models[[&#39;sp_432&#39;]], UK_fut )
+  }
+  return(pred)
+})
+
+# Make binary predictions
+pred_timeseries_bin &lt;- ifelse(pred_timeseries&gt;= unlist(spp_eval[&#39;thresh&#39;,&#39;sp_432&#39;]),1,0)
+
+# Plot maps
+plot(rasterFromXYZ(data.frame(UK_curr[,1:2], pred_timeseries_bin ))[[c(1,11,21,31,41)]], axes=F, legend=F)</code></pre>
+<p><img src="8_dispersal_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+</div>
+</div>
+<div id="dispersal-model" class="section level1">
+<h1><span class="header-section-number">3</span> Dispersal model</h1>
+<p>We now use the <code>MigClim</code> package to simulate dispersal <span class="citation">(Engler, Hordijk, and Guisan 2012)</span>. The model needs to know where the species is currently distributed, how suitable habitat is distributed (either continuous values of habitat suitability/occurrence probability or binary values of suitable/unsuitable), the number of time/dispersal steps, and the dispersal distances. Check out the help page <code>?MigClim.migrate</code> to understand what kind of input data you need and how you have to set the parameters. Also, the user guide is quite helpful.</p>
+<pre class="r"><code>library(MigClim)
+MigClim.userGuide()</code></pre>
+<pre><code>## If the user guide does not open automatically, it can be found in the following directory: /Library/Frameworks/R.framework/Versions/3.6/Resources/library/MigClim/doc/MigClim_userGuide.pdf</code></pre>
+<p>For running MigClim it is vital to have some information on the species’ dispersal ability. We can assume uniform dispersal probability over certain distance classes or assume distance-dependent dispersal probability. We usually refer to the latter as dispersal kernel, which is a mathematical equation describing the distance decay. In a first step, we simply assume that marsh tit can disperse 2.6 km per year <span class="citation">(Sutherland et al. 2000)</span>. As our map resolution is 10km, we could say that the probability of reaching the adjacent cell within one year is 0.26. In a more complicated setting, we could define a dispersal kernel based on the negative exponential distribution <span class="citation">(Sutherland et al. 2000)</span>: <span class="math display">\[p_{disp}(x)=e^{-x/\theta}\]</span> meaning that the probability <span class="math inline">\(p_{disp}\)</span> to disperse over a distance <span class="math inline">\(x\)</span> is a negative exponential function with an expected mean distance <span class="math inline">\(\theta\)</span> - here, 2.6 km per year.</p>
+<pre class="r"><code># Plot dispersal kernel
+plot(1:20,exp(-(1:20)/2.6),type=&#39;l&#39;,lwd=2,xlab=&#39;Distance [km]&#39;,ylab=&#39;Dispersal probability&#39;,ylim=c(0,1))
+lines(c(1,10,10,20),c(0.26,0.26,0,0),col=&#39;red&#39;,lwd=2)
+legend(&#39;topright&#39;,lwd=2,col=c(&#39;black&#39;,&#39;red&#39;),legend=c(&#39;Exponential dispersal&#39;,&#39;Uniform dispersal&#39;),bty=&#39;n&#39;)</code></pre>
+<p><img src="8_dispersal_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<div id="uniform-dispersal" class="section level2">
+<h2><span class="header-section-number">3.1</span> Uniform dispersal</h2>
+<p>First, we assume a uniform dispersal kernel meaning that dispersal to other cells is equally likely within the maximum dispersal distance. Here, we assume a maximum dispersal of 1 cell (or 10 km) per time step.</p>
+<pre class="r"><code># Run the simulation for uniform dispersal of with probability of 0.26. Mean dispersal of marsh tit is 2.6 km per year
+MigClim.migrate(iniDist = data.frame(UK_curr[,1:2], pred_timeseries_bin[,1]),       # Data frame of initial distribution
+                hsMap = data.frame(round(pred_timeseries[,-1]*1000)),               # Habitat suitability in range [0-1000]
+                rcThreshold = round(as.numeric(spp_eval[&#39;thresh&#39;,&#39;sp_432&#39;])*1000),    # Threshold for binarising [0-1000]
+                envChgSteps=40,                   # number of time steps with changing environmental condition
+                dispSteps=1,                      # number of dispersal steps within environmental step
+                simulName=&quot;Marsh_tit_unif&quot;,    # name of output folder and files
+                replicateNb=1,                    # how many stochastic replicates
+                dispKernel=0.26,                  # vector of dispersal probability per distance class
+                overWrite=T)</code></pre>
+<p>MigClim will create a folder <code>simulName</code> with the results. First, we look at the summary.</p>
+<pre class="r"><code>read.table(&quot;Marsh_tit_unif/Marsh_tit_unif_summary.txt&quot;,header=T)</code></pre>
+<pre><code>##        simulName iniCount noDispCount univDispCount occupiedCount
+## 1 Marsh_tit_unif     1130         393           891           802
+##   absentCount totColonized totDecolonized totLDDsuccess runTime
+## 1        1973          437            765             0       0</code></pre>
+<p>This summary table provides information on how many cells were intially occupied, how many cells would be occupied when assuming no dispersal or full (universal dispersal), how many cells are occupied at the end of the simulation, how many cells are empty, how many cells were colonized and decolonized during simulation, and how often did long-distance dispersal occur.</p>
+<p>Next, we can load in the spatial simulation results.</p>
+<pre class="r"><code>raster(&quot;Marsh_tit_unif/Marsh_tit_unif_raster.asc&quot;)</code></pre>
+<pre><code>## class      : RasterLayer 
+## dimensions : 122, 61, 7442  (nrow, ncol, ncell)
+## resolution : 10000, 10000  (x, y)
+## extent     : 50000, 660000, 0, 1220000  (xmin, xmax, ymin, ymax)
+## crs        : NA 
+## source     : /Users/zurell/data/Lehre/HU_Bsc_Msc/HU_M8_GCIB/GCIB-website/Marsh_tit_unif/Marsh_tit_unif_raster.asc 
+## names      : Marsh_tit_unif_raster 
+## values     : -2147483648, 2147483647  (min, max)</code></pre>
+<pre class="r"><code>summary(values(raster(&quot;Marsh_tit_unif/Marsh_tit_unif_raster.asc&quot;)))</code></pre>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
+## -4001.0 -1001.0     0.0   559.9     1.0 30000.0    4667</code></pre>
+<p>The raster files contains different integer numbers <span class="citation">(Engler, Hordijk, and Guisan 2012)</span>.</p>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+Code
+</th>
+<th style="text-align:left;">
+Meaning
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+0
+</td>
+<td style="text-align:left;">
+Cell has never been occupied
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1
+</td>
+<td style="text-align:left;">
+Stable: cells that were initially occupied and remained occupied
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1 &lt; value &lt; 30,000
+</td>
+<td style="text-align:left;">
+The simulation step when a cell was colonized. Hundreds indicate the environmental step. Units indicate dispersal steps within environmental step (here just one).
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+30,000
+</td>
+<td style="text-align:left;">
+Potentially suitable cells that remained unoccupied
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+value &lt; 1
+</td>
+<td style="text-align:left;">
+Decolonized. The absolute numbers indiciate the simulation step when a cell became unoccupied
+</td>
+</tr>
+</tbody>
+</table>
+<p>Now, let’s map this. Note that I do quite a lot of number manipulation in this code. The code is not universally applicable but specific to our time series. Specifically, I plot colonisation fronts in 5-year intervals.</p>
+<pre class="r"><code>library(RColorBrewer)
+library(rasterVis)
+
+
+cls &lt;- c(&#39;grey30&#39;,&#39;grey60&#39;, &#39;black&#39;, colorRampPalette(c(&#39;orange&#39;,&#39;yellow&#39;,&#39;PowderBlue&#39;,&#39;LightSeaGreen&#39;))(8),&quot;blue&quot;)
+legend_colon &lt;- c(&quot;Decolonized&quot;, &quot;Always absent&quot;, &quot;Stable presence&quot;, &quot;1-5 years&quot;, &quot;6-10 years&quot;, &quot;11-15 years&quot;, &quot;16-20 years&quot;,&quot;21-25 years&quot;,&quot;26-30 years&quot;,&quot;31-35 years&quot;,&quot;36-40 years&quot;,&quot;Suitable, but unoccupied&quot;)
+
+res &lt;- raster(&quot;Marsh_tit_unif/Marsh_tit_unif_raster.asc&quot;)
+r_col &lt;- res
+values(r_col)[values(r_col)&lt;0] &lt;- -1
+values(r_col)[values(r_col)==1] &lt;- 1
+values(r_col)[values(r_col)&gt;1 &amp; values(r_col)&lt;30000 &amp; !is.na(values(r_col))] &lt;- round(values(r_col)[values(r_col)&gt;1 &amp; values(r_col)&lt;30000 &amp; !is.na(values(r_col))]/100 -1 ) %/% 5 + 2
+values(r_col)[values(r_col)==30000] &lt;- 10
+res_f &lt;- as.factor(r_col)
+rat &lt;- levels(res_f)[[1]]
+rat[[&quot;Colonisation&quot;]] &lt;- legend_colon
+levels(res_f) &lt;- rat
+  
+levelplot(res_f, margin=F, scales=list(draw=FALSE), col.regions=cls)</code></pre>
+<p><img src="8_dispersal_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+</div>
+<div id="negative-exponential-dispersal" class="section level2">
+<h2><span class="header-section-number">3.2</span> Negative exponential dispersal</h2>
+<p>Next, we repeat the simulations using a negative exponential dispersal kernel with mean dispersal distance of 2.6 km.</p>
+<pre class="r"><code># Run the simulation for negative exponential dispersal kernel with mean 2.6 km - note the 10 km resolution!
+dist &lt;- c(10,20) 
+dneg &lt;- exp(-(dist/2.6)) 
+
+MigClim.migrate(iniDist = data.frame(UK_curr[,1:2], pred_timeseries_bin[,1]),   # Data frame of initial distribution
+                hsMap = data.frame(round(pred_timeseries[,-1]*1000)),           # Habitat suitability in range [0-1000]
+                rcThreshold = round(as.numeric(spp_eval[&#39;thresh&#39;,&#39;sp_432&#39;])*1000),    # Threshold for binarising [0-1000]
+                envChgSteps=40,                   # number of time steps with changing environmental condition
+                dispSteps=1,                      # number of dispersal steps within environmental step
+                simulName=&quot;Marsh_tit_exp&quot;,    # name of output folder and files
+                replicateNb=1,                    # how many stochastic replicates
+                dispKernel=dneg,                  # vector of dispersal probability per distance class
+                overWrite=T)
+
+
+# Map colonisation ability
+res &lt;- raster(&quot;Marsh_tit_exp/Marsh_tit_exp_raster.asc&quot;)
+r_col &lt;- res
+values(r_col)[values(r_col)&lt;0] &lt;- -1
+values(r_col)[values(r_col)==1] &lt;- 1
+values(r_col)[values(r_col)&gt;1 &amp; values(r_col)&lt;30000 &amp; !is.na(values(r_col))] &lt;- round(values(r_col)[values(r_col)&gt;1 &amp; values(r_col)&lt;30000 &amp; !is.na(values(r_col))]/100 -1 ) %/% 5 + 2
+values(r_col)[values(r_col)==30000] &lt;- 10
+res_f &lt;- as.factor(r_col)
+rat &lt;- levels(res_f)[[1]]
+rat[[&quot;Colonisation&quot;]] &lt;- legend_colon
+levels(res_f) &lt;- rat
+  
+levelplot(res_f, margin=F, scales=list(draw=FALSE), col.regions=cls)</code></pre>
+<p><img src="8_dispersal_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<p>We see that colonisation is slower when assuming realistic dispersal kernels.</p>
+</div>
+<div id="negative-exponential-dispersal-with-habitat-invasibility" class="section level2">
+<h2><span class="header-section-number">3.3</span> Negative exponential dispersal with habitat invasibility</h2>
+<p>If you wish to work without the thresholding option, then the values of habitat suitability (in the range 0:1000) are used as a cell “invasibility” index and are interpreted as an absolute probability of presence conditional on the species dispersing to the cell. Here, I only consider the continuous habitat suitability above the threshold.</p>
+<pre class="r"><code># Set habitat suitability below threshold to zero. 
+hsi_thresh &lt;- ifelse(pred_timeseries&gt;= unlist(spp_eval[&#39;thresh&#39;,&#39;sp_432&#39;]),pred_timeseries,0)
+
+# Run simulations
+MigClim.migrate(iniDist = data.frame(UK_curr[,1:2], pred_timeseries_bin[,1]),   # Data frame of initial distribution
+                hsMap = data.frame(round(hsi_thresh[,-1]*1000)),           # Habitat suitability in range [0-1000]
+                rcThreshold = 0,                  # No reclassification
+                envChgSteps=40,                   # number of time steps with changing environmental condition
+                dispSteps=1,                      # number of dispersal steps within environmental step
+                simulName=&quot;Marsh_tit_invas_exp&quot;,    # name of output folder and files
+                replicateNb=1,                    # how many stochastic replicates
+                dispKernel=dneg,                  # vector of dispersal probability per distance class
+                overWrite=T)
+
+# Map colonisation ability
+res &lt;- raster(&quot;Marsh_tit_invas_exp/Marsh_tit_invas_exp_raster.asc&quot;)
+r_col &lt;- res
+values(r_col)[values(r_col)&lt;0] &lt;- -1
+values(r_col)[values(r_col)==1] &lt;- 1
+values(r_col)[values(r_col)&gt;1 &amp; values(r_col)&lt;30000 &amp; !is.na(values(r_col))] &lt;- round(values(r_col)[values(r_col)&gt;1 &amp; values(r_col)&lt;30000 &amp; !is.na(values(r_col))]/100 -1 ) %/% 5 + 2
+values(r_col)[values(r_col)==30000] &lt;- 10
+res_f &lt;- as.factor(r_col)
+rat &lt;- levels(res_f)[[1]]
+rat[[&quot;Colonisation&quot;]] &lt;- legend_colon
+levels(res_f) &lt;- rat
+  
+levelplot(res_f, margin=F, scales=list(draw=FALSE), col.regions=cls)</code></pre>
+<p><img src="8_dispersal_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<div class="alert alert-info">
+<p><strong>Other applications:</strong></p>
+<p>Of course, simulating dispersal explicitly is not only useful for scenarios of global change. It could also be used for simulating potential outcome of species re-introductions or invasions.</p>
+<ul>
+<li>How would you proceed if you wanted to test adequate re-introduction sites?</li>
+<li>How would you proceed if you wanted to identify priority areas for invasion control?</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references">
+<div id="ref-elith2006">
+<p>Elith, J., C. H. Graham, R. P. Anderson, M. Dudik, S. Ferrier, A. Guisan, R. J. Hijmans, et al. 2006. “Novel Methods Improve Prediction of Species’ Distribution from Occurence Data.” <em>Ecography</em> 29: 129–51.</p>
+</div>
+<div id="ref-Engler2012">
+<p>Engler, Robin, Wim Hordijk, and Antoine Guisan. 2012. “The Migclim R Package - Seamless Integration of Dispersal Constraints into Projections of Species Distribution Models.” <em>Ecography</em> 35: 872–78.</p>
+</div>
+<div id="ref-Franklin2010a">
+<p>Franklin, Janet. 2010. “Moving Beyond Static Species Distribution Models in Support of Conservation Biogeography.” <em>Diversity and Distributions</em> 16: 321–30.</p>
+</div>
+<div id="ref-Gillings2019">
+<p>Gillings, Simon, Dawn E. Balmer, Brian J. Caffrey, Iain S. Downie, David W. Gibbons, Peter C. Lack, James B. Reid, J. Tim R. Sharrock, Robert L. Swann, and Robert J. Fuller. 2019. “Breeding and Wintering Bird Distributions in Britain and Ireland from Citizen Science Bird Atlases.” <em>Global Ecology and Biogeography</em> 28 (7): 866–74. <a href="https://doi.org/10.1111/geb.12906">https://doi.org/10.1111/geb.12906</a>.</p>
+</div>
+<div id="ref-Guisan2017">
+<p>Guisan, A., W. Thuiller, and N. E. Zimmermann. 2017. <em>Habitat Suitability and Distribution Models with Applications in R</em>. Cambride University Press.</p>
+</div>
+<div id="ref-Sutherland2000">
+<p>Sutherland, Glenn D., Alton S. Harestad, Karen Price, and Kenneth P. Lertzman. 2000. “Scaling of Natal Dispersal Distances in Terrestrial Birds and Mammals.” <em>Conservation Ecology</em> 4: 16.</p>
+</div>
+<div id="ref-Thuiller2009">
+<p>Thuiller, W., B. Lafourcade, R. Engler, and M. B. Araujo. 2009. “BIOMOD - a Platform for Ensemble Forecasting of Species Distributions.” <em>Ecography</em> 32: 369–73.</p>
+</div>
+<div id="ref-Urban2016">
+<p>Urban, M. C., G. Bocedi, A. P. Hendry, J.-B. Mihoub, G. Pe’er, A. Singer, J. R. Bridle, et al. 2016. “Improving the Forecast for Biodiversity Under Climate Change.” <em>Science</em> 353: aad8466.</p>
+</div>
+<div id="ref-Zurell2017">
+<p>Zurell, D. 2017. “Integrating Demography, Dispersal and Interspecific Interactions into Bird Distribution Models.” <em>Journal of Avian Biology</em> 48: 1505–16.</p>
+</div>
+<div id="ref-Zurell2016">
+<p>Zurell, D, W Thuiller, J Pagel, JS Cabral, T Muenkemueller, D Gravel, S Dullinger, et al. 2016. “Benchmarking Novel Approaches for Modelling Species Range Dynamics.” <em>Global Change Biology</em> 22: 2651–64.</p>
+</div>
+</div>
+</div>
 
 <!DOCTYPE html>
 <html>
@@ -367,6 +776,8 @@ $(document).ready(function () {
 </html>
 
 
+</div>
+</div>
 
 </div>
 
@@ -399,6 +810,32 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>

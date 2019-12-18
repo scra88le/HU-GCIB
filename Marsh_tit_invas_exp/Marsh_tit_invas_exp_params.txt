@@ -1,0 +1,15 @@
+nrRows 122
+nrCols 61
+iniDist Marsh_tit_invas_exp.InitialDist
+hsMap Marsh_tit_invas_exp.HSmap
+rcThreshold 0
+envChgSteps 40
+dispSteps 1
+dispDist 2
+dispKernel 0.0213617391750071 0.000456323900581031
+iniMatAge 1
+fullMatAge 2
+propaguleProd 1
+fullOutput false
+replicateNb 1
+simulName Marsh_tit_invas_exp

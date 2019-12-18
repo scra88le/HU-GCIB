@@ -1,0 +1,2 @@
+simulName	iniCount	noDispCount	univDispCount	occupiedCount	absentCount	totColonized	totDecolonized	totLDDsuccess	runTime
+Marsh_tit_dispuni	1130	393	891	809	1966	446	767	0	0

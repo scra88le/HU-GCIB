@@ -1,0 +1,2 @@
+simulName	iniCount	noDispCount	univDispCount	occupiedCount	absentCount	totColonized	totDecolonized	totLDDsuccess	runTime
+Marsh_tit_invas_exp	1130	393	891	497	2278	111	744	0	0
